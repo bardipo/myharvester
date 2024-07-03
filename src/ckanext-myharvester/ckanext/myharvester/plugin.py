@@ -43,11 +43,7 @@ class MyharvesterPlugin(SingletonPlugin):
             wait = WebDriverWait(driver, 10)
             print("I waited")
             download_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "a.btn-modal.zipFileContents")))
-            print("I got download button")
-            driver.execute_script("arguments[0].scrollIntoView();", download_button)
-            print("I am doing something")
-            ActionChains(driver).move_to_element(download_button).click().perform()
-            print("I clicked")
+            download_button.click()
             wait.until(EC.visibility_of_element_located((By.ID, 'detailModal')))
             print("I got download screen")
             links = [link.get_attribute('href') for link in driver.find_elements(By.CSS_SELECTOR, '#detailModal a')]
