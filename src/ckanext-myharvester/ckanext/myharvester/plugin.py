@@ -23,44 +23,7 @@ class MyharvesterPlugin(SingletonPlugin):
     logging.basicConfig(level=logging.DEBUG)
     log = logging.getLogger(__name__)
 
-    def fetch_download_urls(self,tender_id):
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--window-size=1920,1080")  # Standard desktop window size
-        chrome_options.add_argument("--no-sandbox") 
-        chrome_options.add_argument("--disable-gpu") 
-        chrome_options.add_argument('start-maximized') 
-        chrome_options.add_argument('disable-infobars')
-        chrome_options.add_argument("--disable-extensions")
-        chrome_options.add_argument('--disable-dev-shm-usage')        
-
-        driver = webdriver.Chrome(options=chrome_options)
-
-        try:
-            url = f'https://vergabe.autobahn.de/NetServer/TenderingProcedureDetails?function=_Details&TenderOID=54321-NetTender-{tender_id}&thContext=publications'
-            driver.get(url)
-            print("I got URL")
-            wait = WebDriverWait(driver, 10)
-            print("I waited")
-            download_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "a.btn-modal.zipFileContents")))
-            download_button.click()
-            wait.until(EC.visibility_of_element_located((By.ID, 'detailModal')))
-            print("I got download screen")
-            links = [link.get_attribute('href') for link in driver.find_elements(By.CSS_SELECTOR, '#detailModal a')]
-            return links
-        finally:
-            driver.quit()
-
-    def process_tenders(self,tender_ids):
-        all_tender_urls = {}
-        for tender_id in tender_ids:
-            print(f"Fetching URLs for tender ID: {tender_id}")
-            download_urls = self.fetch_download_urls(tender_id)
-            all_tender_urls[tender_id] = download_urls
-            print(f"Found {len(download_urls)} URLs for Tender ID {tender_id}")
-        return all_tender_urls
-
-
+  
     def info(self):
         return {
             'name': 'myharvester',
@@ -71,16 +34,13 @@ class MyharvesterPlugin(SingletonPlugin):
     def gather_stage(self, harvest_job):
         self.log.debug('Gather stage for: %s' % harvest_job.source.url)
         
-        # Example tender IDs; replace with dynamic fetching logic if required
-        tender_ids = ['190540c37e6-7065f4480bd645ac', '19054b53176-7d861dcb50055eb4', '19059a3fd19-630886ad86d4f3e6']
+      
         
-        # Fetch all URLs for the provided tender IDs
-        all_tender_urls = self.process_tenders(tender_ids)
+        all_tender_urls = ["https://raw.githubusercontent.com/bardipo/testscrapper/main/1.pdf","https://raw.githubusercontent.com/bardipo/testscrapper/main/2.pdf","https://raw.githubusercontent.com/bardipo/testscrapper/main/3.pdf"]
 
         harvest_object_ids = []
 
-        for tender_id, urls in all_tender_urls.items():
-            for url in urls:
+        for url in all_tender_urls:
                 # Generate a SHA1 hash for the URL to use as the GUID
                 guid = sha1(url.encode('utf-8')).hexdigest()
                 
