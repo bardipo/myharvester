@@ -19,6 +19,7 @@ from urllib.parse import urlparse, unquote
 import re
 import zipfile
 from bs4 import BeautifulSoup
+import time
 
 class MyharvesterPlugin(SingletonPlugin):
     implements(IHarvester)
@@ -160,11 +161,79 @@ class MyharvesterPlugin(SingletonPlugin):
     
     # VERGABE AUTOBAHN --------------------------------
 
+
+    # BieterPortal DB --------------------------------
+
+    def process_multiple_tenders_bieter(self,tender_ids, download_dir):
+        bieter_portal_path = self.ensure_directory_exists(os.path.join(download_dir, 'bieter_portal'))
+        for tender_id in tender_ids:
+            print(f"Processing tender ID: {tender_id}")
+            tender_download_path = self.ensure_directory_exists(os.path.join(bieter_portal_path, tender_id))
+            print(tender_download_path)
+            zip_file_path = self.download_tender_files_bieter(tender_id, tender_download_path)
+            if zip_file_path:
+                self.unzip_file(zip_file_path, tender_download_path)
+
+    def ensure_directory_exists(self,path):
+        if not os.path.exists(path):
+            os.makedirs(path)
+        return path
+    
+    def download_tender_files_bieter(self,tender_id, download_dir):
+        chrome_options = Options()
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--window-size=1920,1080")
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-gpu")
+        chrome_options.add_argument('start-maximized')
+        chrome_options.add_argument('disable-infobars')
+        chrome_options.add_argument("--disable-extensions")
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        prefs = {
+            "download.default_directory": download_dir,
+            "savefile.default_directory": download_dir,
+            "download.prompt_for_download": False,
+            "download.directory_upgrade": True,
+            "safebrowsing.enabled": True
+        }
+        chrome_options.add_experimental_option("prefs", prefs)
+        driver = webdriver.Chrome(options=chrome_options)
+
+        file_path = None
+        try:
+            url = f'https://bieterportal.noncd.db.de/evergabe.bieter/eva/supplierportal/portal/subproject/{tender_id}/details'
+            driver.get(url)
+            wait = WebDriverWait(driver, 10)
+            ok_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button.mat-focus-indicator.mat-tooltip-trigger.dialog-button-same-size.mat-stroked-button.mat-button-base.mat-primary[mat-dialog-close]")))
+            ok_button.click()
+            download_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button.mat-focus-indicator.mat-tooltip-trigger.download-button-style.mat-stroked-button.mat-button-base.mat-primary")))
+            download_button.click()
+            time.sleep(15)  # Allow time for the download to complete
+            file_list = [os.path.join(download_dir, f) for f in os.listdir(download_dir)]
+            print(file_list)
+            file_path = max([os.path.join(download_dir, f) for f in os.listdir(download_dir)], key=os.path.getctime)
+        finally:
+            driver.quit()
+        return file_path
+    
+    def gather_stage_bieter(self,harvest_job):
+        download_directory = "/srv/app/src_extensions/ckanext-myharvester/ckanext/myharvester/public"
+        tender_ids = ['ceeb1cbd-e356-4249-b583-f3f8ccf044f2','eebba3cb-c144-4d07-9f87-31b1e3de0cce']
+        self.process_multiple_tenders_bieter(tender_ids, download_directory)
+        raise HarvestGatherError()
+
+
+
+
+    # BieterPortal DB --------------------------------
+
     def gather_stage(self, harvest_job):
         self.log.debug('Gather stage for: %s' % harvest_job.source.url)
         
         if "vergabe.autobahn.de" in harvest_job.source.url:
             return self.gather_stage_vergabe_autobahn(harvest_job)
+        elif "https://bieterportal.noncd.db.de/" in harvest_job.source.url:
+            return self.gather_stage_bieter(harvest_job)
 
         raise HarvestGatherError()
 
