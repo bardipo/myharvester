@@ -1,8 +1,13 @@
+from hashlib import sha1
 import json
 import logging
 import os
+import shutil
 import zipfile
 import requests
+from ckan.model import Session, Package
+from ckanext.harvest.model import HarvestJob, HarvestObject, HarvestGatherError, \
+                                    HarvestObjectError
 
 
 def unzip_file(file_path, extract_to):
@@ -56,11 +61,11 @@ def import_stage_giving_publisher(harvest_object,publisher):
             guid = harvest_object.guid
             tender_id, url_hash = guid.split('-', 1)
 
-            response = requests.get(package_show_url, params={'id': tender_id}, headers={'Authorization': api_token})
+            response = requests.get(package_show_url, params={'id': tender_id.lower()}, headers={'Authorization': api_token})
             if response.status_code == 404:
                 logging.debug('Dataset %s does not exist. Creating new dataset.' % tender_id)
                 try:
-                    create_dataset(package_create_url, api_token, tender_id, owner_org, contract_name)
+                    create_dataset(package_create_url, api_token, tender_id.lower(), owner_org, contract_name)
                 except Exception as e:
                     logging.error('Failed to create package %s: %s' % (tender_id, str(e)))
                     return False
@@ -70,7 +75,7 @@ def import_stage_giving_publisher(harvest_object,publisher):
 
             filename = os.path.basename(file_path)
             logging.debug('Uploading file %s to package %s' % (file_path, tender_id))
-            if not upload_file(resource_create_url, api_token, file_path, tender_id, filename):
+            if not upload_file(resource_create_url, api_token, file_path, tender_id.lower(), filename):
                 return False
 
             return True
@@ -112,3 +117,44 @@ def upload_file(resource_create_url, api_token, file_path, package_id, filename)
         except Exception as e:
             logging.error('Error uploading file %s to package %s: %s' % (file_path, package_id, str(e)))
             return False
+
+
+def ensure_directory_exists(path):
+        if not os.path.exists(path):
+            os.makedirs(path)
+        return path
+
+
+def process_multiple_tenders_giving_publisher(tender_ids,harvest_job,download_function,publisher_name):
+        download_dir = "/srv/app/src_extensions/ckanext-myharvester/ckanext/myharvester/public"
+        bieter_portal_path = ensure_directory_exists(os.path.join(download_dir, publisher_name))
+        harvest_object_ids = []
+        for tender_id in tender_ids:
+            print(f"Processing tender ID: {tender_id}")
+            tender_download_path = ensure_directory_exists(os.path.join(bieter_portal_path, tender_id))
+            print(tender_download_path)
+            zip_file_path, contract_name = download_function(tender_id, tender_download_path)
+            if zip_file_path:
+                unzip_file(zip_file_path, tender_download_path)
+            files = os.listdir(tender_download_path)
+            for file in files:
+                file_path = os.path.join(tender_download_path,file)
+                if os.path.isfile(file_path):
+                    file_hash = sha1(os.path.basename(file_path).encode('utf-8')).hexdigest()
+                    guid = f"{tender_id}-{file_hash}"
+                    obj = Session.query(HarvestObject).filter_by(guid=guid).first()
+                    if not obj:
+                        content = json.dumps({'file_path': file_path, 'contract_name': contract_name})
+                        obj = HarvestObject(guid=guid, job=harvest_job, content=content)
+                        Session.add(obj)
+                        Session.commit()
+                    harvest_object_ids.append(obj.id)
+        return harvest_object_ids
+
+
+
+def move_zip_file_to_public(download_dir):
+     
+    file_path = max([os.path.join("/srv/app", f) for f in os.listdir("/srv/app")], key=os.path.getctime)
+    shutil.move(file_path,download_dir)
+    return os.path.join(download_dir, os.path.basename(file_path))

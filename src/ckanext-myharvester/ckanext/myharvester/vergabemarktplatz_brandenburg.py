@@ -17,9 +17,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from ckanext.harvest.model import HarvestJob, HarvestObject, HarvestGatherError, \
                                     HarvestObjectError
-import shutil
- 
-def download_tender_files_bieter(tender_id, download_dir):
+
+    
+def download_tender_files_vergabe_brandenburg(tender_id, download_dir):
         chrome_options = Options()
         chrome_options.add_argument("--headless")
         chrome_options.add_argument("--window-size=1920,1080")
@@ -38,28 +38,23 @@ def download_tender_files_bieter(tender_id, download_dir):
         }
         chrome_options.add_experimental_option("prefs", prefs)
         driver = webdriver.Chrome(options=chrome_options)
-        print(chrome_options.to_capabilities())
-
+    
         file_path = None
         try:
-            url = f'https://bieterportal.noncd.db.de/evergabe.bieter/eva/supplierportal/portal/subproject/{tender_id}/details'
+            url = f"https://vergabemarktplatz.brandenburg.de/VMPSatellite/public/company/project/{tender_id}/de/documents"
             driver.get(url)
-            wait = WebDriverWait(driver, 10)
-            contract_name = ""
-            title_div = wait.until(EC.visibility_of_element_located((By.XPATH, "//div[text()='Titel']")))
-            if title_div:
-                value_div = title_div.find_element(By.XPATH, "./following-sibling::div")
-                contract_name = value_div.text.strip()
-            download_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[.//span[text()='Herunterladen']]")))
+            time.sleep(5)
+            project_title_element = driver.find_element(By.CSS_SELECTOR, '#projectRoomTitleBox #projectRoomTitleText span[title]')
+            contract_name = project_title_element.get_attribute('title')
+            download_button = driver.find_element(By.XPATH, "//a[contains(@title, 'Alle Dokumente als ZIP-Datei herunterladen')]")
             download_button.click()
             time.sleep(10)
             file_path = move_zip_file_to_public(download_dir)
-
         finally:
             driver.quit()
         return [file_path,contract_name]
     
-def gather_stage_bieter(harvest_job):
-        tender_ids = ['ceeb1cbd-e356-4249-b583-f3f8ccf044f2','eebba3cb-c144-4d07-9f87-31b1e3de0cce']
-        return process_multiple_tenders_giving_publisher(tender_ids,harvest_job,download_tender_files_bieter,"bieter_portal")
-
+def gather_stage_vergabeBrandenburg(harvest_job):
+        # CXP9YBY68KA
+        tender_ids = ['CXP9YYH68QH', 'CXP9Y6568GQ','CXP9YBY68KA']
+        return process_multiple_tenders_giving_publisher(tender_ids,harvest_job,download_tender_files_vergabe_brandenburg,"vergabe_brandenburg")

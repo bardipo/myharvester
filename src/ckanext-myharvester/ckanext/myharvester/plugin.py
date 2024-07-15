@@ -11,6 +11,7 @@ from .vergabeAutobahn import gather_stage_vergabe_autobahn, fetch_stage_vergabe_
 from .bieterPortal import gather_stage_bieter
 from .evergabe import gather_stage_evergabe, fetch_stage_evergabe
 from .evergabeOnline import gather_stage_evergabeOnline
+from .vergabemarktplatz_brandenburg import gather_stage_vergabeBrandenburg
 
 class MyharvesterPlugin(SingletonPlugin):
     implements(IHarvester)
@@ -46,6 +47,8 @@ class MyharvesterPlugin(SingletonPlugin):
             return gather_stage_evergabe(harvest_job)
         elif "https://www.evergabe-online.de/" in harvest_job.source.url:
             return gather_stage_evergabeOnline(harvest_job)
+        elif "https://vergabemarktplatz.brandenburg.de/" in harvest_job.source.url:
+            return gather_stage_vergabeBrandenburg(harvest_job)
 
         raise HarvestGatherError()
 
@@ -59,6 +62,8 @@ class MyharvesterPlugin(SingletonPlugin):
         elif "https://www.evergabe.de/" in self.get_original_url(harvest_object.id):
             return fetch_stage_evergabe(harvest_object)
         elif "https://www.evergabe-online.de/" in self.get_original_url(harvest_object.id):
+            return True
+        elif "https://vergabemarktplatz.brandenburg.de/" in self.get_original_url(harvest_object.id):
             return True
         
         return False
@@ -74,6 +79,8 @@ class MyharvesterPlugin(SingletonPlugin):
             return import_stage_giving_publisher(harvest_object,"evergabe")
         elif "https://www.evergabe-online.de/" in self.get_original_url(harvest_object.id):
             return import_stage_giving_publisher(harvest_object,"evergabe-online")
+        elif "https://vergabemarktplatz.brandenburg.de/" in self.get_original_url(harvest_object.id):
+            return import_stage_giving_publisher(harvest_object,"vergabemarktplatz-brandenburg")
             
         return False
 

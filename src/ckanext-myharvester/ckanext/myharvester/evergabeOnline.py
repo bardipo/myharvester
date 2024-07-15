@@ -18,36 +18,6 @@ from selenium.webdriver.common.action_chains import ActionChains
 from ckanext.harvest.model import HarvestJob, HarvestObject, HarvestGatherError, \
                                     HarvestObjectError
 
-def process_multiple_tenders_evergabeOnline(tender_ids, download_dir,harvest_job):
-        bieter_portal_path = ensure_directory_exists(os.path.join(download_dir, 'evergabe_online'))
-        harvest_object_ids = []
-        for tender_id in tender_ids:
-            print(f"Processing tender ID: {tender_id}")
-            tender_download_path = ensure_directory_exists(os.path.join(bieter_portal_path, tender_id))
-            print(tender_download_path)
-            zip_file_path, contract_name = download_tender_files_evergabeOnline(tender_id, tender_download_path)
-            if zip_file_path:
-                unzip_file(zip_file_path, tender_download_path)
-            files = os.listdir(tender_download_path)
-            for file in files:
-                file_path = os.path.join(tender_download_path,file)
-                if os.path.isfile(file_path):
-                    file_hash = sha1(os.path.basename(file_path).encode('utf-8')).hexdigest()
-                    guid = f"{tender_id}-{file_hash}"
-                    obj = Session.query(HarvestObject).filter_by(guid=guid).first()
-                    if not obj:
-                        content = json.dumps({'file_path': file_path, 'contract_name': contract_name})
-                        obj = HarvestObject(guid=guid, job=harvest_job, content=content)
-                        Session.add(obj)
-                        Session.commit()
-                    harvest_object_ids.append(obj.id)
-        return harvest_object_ids
-
-
-def ensure_directory_exists(path):
-        if not os.path.exists(path):
-            os.makedirs(path)
-        return path
     
 def download_tender_files_evergabeOnline(tender_id, download_dir):
         chrome_options = Options()
@@ -86,13 +56,11 @@ def download_tender_files_evergabeOnline(tender_id, download_dir):
             zip_button.click()
             time.sleep(10)
 
-            file_path = max([os.path.join(download_dir, f) for f in os.listdir(download_dir)], key=os.path.getctime)
+            file_path = move_zip_file_to_public(download_dir)
         finally:
             driver.quit()
         return [file_path,contract_name]
     
 def gather_stage_evergabeOnline(harvest_job):
-        download_directory = "/src/ckanext-myharvester/ckanext/myharvester/public"
         tender_ids = ['697632', '701009']
-        return process_multiple_tenders_evergabeOnline(tender_ids, download_directory,harvest_job)
-
+        return process_multiple_tenders_giving_publisher(tender_ids,harvest_job,download_tender_files_evergabeOnline,"evergabe_online")
