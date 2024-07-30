@@ -24,6 +24,7 @@ RUN apk add --no-cache \
     chromium \
     chromium-chromedriver
 RUN pip install selenium requests
+RUN pip install pymongo
 ### Harvester ###
 RUN pip3 install -e 'git+https://github.com/ckan/ckanext-harvest.git@master#egg=ckanext-harvest' && \
     pip3 install -r ${APP_DIR}/src/ckanext-harvest/pip-requirements.txt

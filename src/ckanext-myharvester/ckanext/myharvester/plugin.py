@@ -1,169 +1,154 @@
 from ckan.plugins.core import SingletonPlugin, implements
 from ckanext.harvest.interfaces import IHarvester
-from hashlib import sha1
-import requests
-import os
 import logging
 from ckan import model
 from ckan.model import Session, Package
 import json
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.action_chains import ActionChains
 from ckanext.harvest.model import HarvestJob, HarvestObject, HarvestGatherError, \
                                     HarvestObjectError
+from .helpers import *
+from .vergabeAutobahn import gather_stage_vergabe_autobahn
+from .bieterPortal import gather_stage_bieter
+from .evergabe import gather_stage_evergabe
+from .evergabeOnline import gather_stage_evergabeOnline
+from .vergabemarktplatz_brandenburg import gather_stage_vergabeBrandenburg
+from .dtvp import gather_stage_dtvp
+from .vergabeNiedersachsen import gather_stage_vergabe_niedersachsen
+from .vergabeBremen import gather_stage_vergabe_bremen
+from .meinauftrag import gather_stage_meinauftrag
+from .ausmass import gather_stage_aumass
+from .staatsanzeiger import gather_stage_staatsanzeiger
+from .vergabeVmstart import gather_stage_vergabe_vmstart
+from .vergabeNrw import gather_stage_vergabe_nrw
+from .vmpRheinland import gather_stage_vmp_rheinland
+from .importHelpers import import_stage_giving_publisher
 
 class MyharvesterPlugin(SingletonPlugin):
     implements(IHarvester)
 
-    # Ensure logger is set up
     logging.basicConfig(level=logging.DEBUG)
     log = logging.getLogger(__name__)
 
-    def fetch_download_urls(self,tender_id):
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--window-size=1920,1080")  # Standard desktop window size
-        chrome_options.add_argument("--no-sandbox") 
-        chrome_options.add_argument("--disable-gpu") 
-        chrome_options.add_argument('start-maximized') 
-        chrome_options.add_argument('disable-infobars')
-        chrome_options.add_argument("--disable-extensions")
-        chrome_options.add_argument('--disable-dev-shm-usage')        
-
-        driver = webdriver.Chrome(options=chrome_options)
-
-        try:
-            url = f'https://vergabe.autobahn.de/NetServer/TenderingProcedureDetails?function=_Details&TenderOID=54321-NetTender-{tender_id}&thContext=publications'
-            driver.get(url)
-            print("I got URL")
-            wait = WebDriverWait(driver, 10)
-            print("I waited")
-            download_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "a.btn-modal.zipFileContents")))
-            download_button.click()
-            wait.until(EC.visibility_of_element_located((By.ID, 'detailModal')))
-            print("I got download screen")
-            links = [link.get_attribute('href') for link in driver.find_elements(By.CSS_SELECTOR, '#detailModal a')]
-            return links
-        finally:
-            driver.quit()
-
-    def process_tenders(self,tender_ids):
-        all_tender_urls = {}
-        for tender_id in tender_ids:
-            print(f"Fetching URLs for tender ID: {tender_id}")
-            download_urls = self.fetch_download_urls(tender_id)
-            all_tender_urls[tender_id] = download_urls
-            print(f"Found {len(download_urls)} URLs for Tender ID {tender_id}")
-        return all_tender_urls
-
-
+  
     def info(self):
         return {
             'name': 'myharvester',
             'title': 'My Harvester',
             'description': 'A test harvester for CKAN that handles PDF and ZIP resources'
         }
+    
+    def get_original_url(self, harvest_object_id):
+        obj = HarvestObject.get(harvest_object_id)
+        if not obj:
+            return None
+        original_url = obj.source.url
+        return original_url
+    
+
 
     def gather_stage(self, harvest_job):
         self.log.debug('Gather stage for: %s' % harvest_job.source.url)
         
-        # Example tender IDs; replace with dynamic fetching logic if required
-        tender_ids = ['190540c37e6-7065f4480bd645ac', '19054b53176-7d861dcb50055eb4', '19059a3fd19-630886ad86d4f3e6']
-        
-        # Fetch all URLs for the provided tender IDs
-        all_tender_urls = self.process_tenders(tender_ids)
+        if "vergabe.autobahn.de" in harvest_job.source.url:
+            return gather_stage_vergabe_autobahn(harvest_job)
+        elif "https://bieterportal.noncd.db.de/" in harvest_job.source.url:
+            return gather_stage_bieter(harvest_job)
+        elif "https://www.evergabe.de/" in harvest_job.source.url:
+            return gather_stage_evergabe(harvest_job)
+        elif "https://www.evergabe-online.de/" in harvest_job.source.url:
+            return gather_stage_evergabeOnline(harvest_job)
+        elif "https://vergabemarktplatz.brandenburg.de/" in harvest_job.source.url:
+            return gather_stage_vergabeBrandenburg(harvest_job)
+        elif "https://www.dtvp.de/" in harvest_job.source.url:
+            return gather_stage_dtvp(harvest_job)
+        elif "https://vergabe.niedersachsen.de/" in harvest_job.source.url:
+            return gather_stage_vergabe_niedersachsen(harvest_job)
+        elif "https://vergabe.bremen.de/" in harvest_job.source.url:
+            return gather_stage_vergabe_bremen(harvest_job)
+        elif "https://www.meinauftrag.rib.de/" in harvest_job.source.url:
+            return gather_stage_meinauftrag(harvest_job)
+        elif "https://plattform.aumass.de/" in harvest_job.source.url:
+            return gather_stage_aumass(harvest_job)
+        elif "https://www.staatsanzeiger-eservices.de/" in harvest_job.source.url:
+            return gather_stage_staatsanzeiger(harvest_job)
+        elif "https://vergabe.vmstart.de/" in harvest_job.source.url:
+            return gather_stage_vergabe_vmstart(harvest_job)
+        elif "https://www.evergabe.nrw.de/" in harvest_job.source.url:
+            return gather_stage_vergabe_nrw(harvest_job)
+        elif "https://www.vmp-rheinland.de/" in harvest_job.source.url:
+            return gather_stage_vmp_rheinland(harvest_job)
 
-        harvest_object_ids = []
-
-        for tender_id, urls in all_tender_urls.items():
-            for url in urls:
-                # Generate a SHA1 hash for the URL to use as the GUID
-                guid = sha1(url.encode('utf-8')).hexdigest()
-                
-                # Check if the HarvestObject already exists
-                obj = Session.query(HarvestObject).filter_by(guid=guid).first()
-                if not obj:
-                    # Create a new HarvestObject if it doesn't exist
-                    obj = HarvestObject(guid=guid, job=harvest_job, content=url)
-                    obj.save()
-                
-                harvest_object_ids.append(obj.id)
-
-        # Set configuration from the harvest job source
-        self._set_config(harvest_job.source.config)
-
-        # Check if this source has been harvested before
-        previous_job = Session.query(HarvestJob) \
-                        .filter(HarvestJob.source == harvest_job.source) \
-                        .filter(HarvestJob.gather_finished != None) \
-                        .filter(HarvestJob.id != harvest_job.id) \
-                        .order_by(HarvestJob.gather_finished.desc()) \
-                        .limit(1).first()
-
-        return harvest_object_ids
+        raise HarvestGatherError()
 
     def fetch_stage(self, harvest_object):
         self.log.debug('Fetch stage for object: %s' % harvest_object.id)
-        url = harvest_object.content
-        try:
-            response = requests.get(url)
-            response.raise_for_status()
 
-            content_type = response.headers.get('Content-Type', '')
-            if 'application/pdf' in content_type or url.lower().endswith('.pdf'):
-                file_extension = 'pdf'
-            elif 'application/zip' in content_type or url.lower().endswith('.zip'):
-                file_extension = 'zip'
-            else:
-                self.log.error('Unsupported file type for URL %s: %s' % (url, content_type))
-                return False
-
-            filename = sha1(url.encode('utf-/8')).hexdigest() + '.' + file_extension
-            file_path = os.path.join(r'/srv/app/src_extensions/ckanext-myharvester/ckanext/myharvester/public/', filename)
-
-            with open(file_path, 'wb') as f:
-                f.write(response.content)
-
-            harvest_object.content = file_path
-            harvest_object.save()
+        if "vergabe.autobahn.de" in self.get_original_url(harvest_object.id):
             return True
-
-        except requests.HTTPError as e:
-            self.log.error('HTTP error fetching %s: %s' % (url, str(e)))
-            return False
-        except requests.RequestException as e:
-            self.log.error('Error fetching %s: %s' % (url, str(e)))
-            return False
-
+        elif "https://bieterportal.noncd.db.de/" in self.get_original_url(harvest_object.id):
+            return True
+        elif "https://www.evergabe.de/" in self.get_original_url(harvest_object.id):
+            return True
+        elif "https://www.evergabe-online.de/" in self.get_original_url(harvest_object.id):
+            return True
+        elif "https://vergabemarktplatz.brandenburg.de/" in self.get_original_url(harvest_object.id):
+            return True
+        elif "https://www.dtvp.de/" in self.get_original_url(harvest_object.id):
+            return True
+        elif "https://vergabe.niedersachsen.de/" in self.get_original_url(harvest_object.id):
+            return True
+        elif "https://vergabe.bremen.de/" in self.get_original_url(harvest_object.id):
+            return True
+        elif "https://www.meinauftrag.rib.de/" in self.get_original_url(harvest_object.id):
+            return True
+        elif "https://plattform.aumass.de/" in self.get_original_url(harvest_object.id):
+            return True
+        elif "https://www.staatsanzeiger-eservices.de/" in self.get_original_url(harvest_object.id):
+            return True
+        elif "https://vergabe.vmstart.de/" in self.get_original_url(harvest_object.id):
+            return True
+        elif "https://www.evergabe.nrw.de/" in self.get_original_url(harvest_object.id):
+            return True
+        elif "https://www.vmp-rheinland.de/" in self.get_original_url(harvest_object.id):
+            return True
+        
+        
+        return False
     def import_stage(self, harvest_object):
         self.log.debug('Import stage for object: %s' % harvest_object.id)
         self.log.debug('Harvesting object: %s' % harvest_object)
-        try:
-            dataset_dict = {
-                'name': sha1(harvest_object.content.encode('utf-8')).hexdigest(),
-                'title': 'Dataset from PDF ' + harvest_object.content,
-                'resources': [{
-                    'url': harvest_object.content,
-                    'format': 'PDF'
-                }]
-            }
 
-            package_id = self._create_or_update_package(dataset_dict, harvest_object)
+        if "vergabe.autobahn.de" in self.get_original_url(harvest_object.id):
+            return import_stage_giving_publisher(harvest_object,"vergabe-autobahn")
+        elif "https://bieterportal.noncd.db.de/" in self.get_original_url(harvest_object.id):
+            return import_stage_giving_publisher(harvest_object,"bieter-portal-db")
+        elif "https://www.evergabe.de/" in self.get_original_url(harvest_object.id):
+            return import_stage_giving_publisher(harvest_object,"evergabe")
+        elif "https://www.evergabe-online.de/" in self.get_original_url(harvest_object.id):
+            return import_stage_giving_publisher(harvest_object,"evergabe-online")
+        elif "https://vergabemarktplatz.brandenburg.de/" in self.get_original_url(harvest_object.id):
+            return import_stage_giving_publisher(harvest_object,"vergabemarktplatz-brandenburg")
+        elif "https://www.dtvp.de/" in self.get_original_url(harvest_object.id):
+            return import_stage_giving_publisher(harvest_object,"dtvp")
+        elif "https://vergabe.niedersachsen.de/" in self.get_original_url(harvest_object.id):
+            return import_stage_giving_publisher(harvest_object,"vergabe-niedersachsen")
+        elif "https://vergabe.bremen.de/" in self.get_original_url(harvest_object.id):
+            return import_stage_giving_publisher(harvest_object,"vergabe-bremen")
+        elif "https://www.meinauftrag.rib.de/" in self.get_original_url(harvest_object.id):
+            return import_stage_giving_publisher(harvest_object,"meinauftrag")
+        elif "https://plattform.aumass.de/" in self.get_original_url(harvest_object.id):
+            return import_stage_giving_publisher(harvest_object,"aumass")
+        elif "https://www.staatsanzeiger-eservices.de/" in self.get_original_url(harvest_object.id):
+            return import_stage_giving_publisher(harvest_object,"staatsanzeiger")
+        elif "https://vergabe.vmstart.de/" in self.get_original_url(harvest_object.id):
+            return import_stage_giving_publisher(harvest_object,"vergabe-vmstart")
+        elif "https://www.evergabe.nrw.de/" in self.get_original_url(harvest_object.id):
+            return import_stage_giving_publisher(harvest_object,"vergabe-nrw")
+        elif "https://www.vmp-rheinland.de/" in self.get_original_url(harvest_object.id):
+            return import_stage_giving_publisher(harvest_object,"vmp-rheinland")
             
-            if package_id:
-                harvest_object.current = True
-                harvest_object.package_id = package_id
-                harvest_object.save()
-                return True
-            else:
-                return False
-        except Exception as e:
-            self.log.error('Could not import dataset for object %s: %s' % (harvest_object.id, str(e)))
-            return False
+        return False
+
 
     def _create_or_update_package(self, data_dict, harvest_object):
         pass
