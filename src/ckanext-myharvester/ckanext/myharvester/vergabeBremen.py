@@ -13,9 +13,9 @@ from selenium.webdriver.common.action_chains import ActionChains
 from ckanext.harvest.model import HarvestJob, HarvestObject, HarvestGatherError, \
                                     HarvestObjectError
 from selenium.common.exceptions import TimeoutException
-from .databaseConnection import get_tender_ids_vergabe_autobahn
+from .databaseConnection import get_tender_ids_vergabe_bremen
  
-def download_tender_files_vergabe_autobahn(url, download_dir):
+def download_tender_files_vergabe_bremen(url, download_dir):
     # Set up Chrome options
     chrome_options = Options()
     chrome_options.add_argument("--headless")
@@ -66,7 +66,7 @@ def download_tender_files_vergabe_autobahn(url, download_dir):
     finally:
         driver.quit()
     
-def gather_stage_vergabe_autobahn(harvest_job):
-        tender_ids = get_tender_ids_vergabe_autobahn()
-        return process_multiple_tenders_giving_publisher(tender_ids,harvest_job,download_tender_files_vergabe_autobahn,"vergabe_autobahn")
+def gather_stage_vergabe_bremen(harvest_job):
+        tender_ids = get_tender_ids_vergabe_bremen()
+        return process_multiple_tenders_giving_publisher(tender_ids,harvest_job,download_tender_files_vergabe_bremen,"vergabe_bremen")
 

@@ -13,9 +13,9 @@ from selenium.webdriver.common.action_chains import ActionChains
 from ckanext.harvest.model import HarvestJob, HarvestObject, HarvestGatherError, \
                                     HarvestObjectError
 from selenium.common.exceptions import TimeoutException
-from .databaseConnection import get_tender_ids_vergabe_autobahn
+from .databaseConnection import get_tender_ids_staatsanzeiger
  
-def download_tender_files_vergabe_autobahn(url, download_dir):
+def download_tender_files_staatsanzeiger(url, download_dir):
     # Set up Chrome options
     chrome_options = Options()
     chrome_options.add_argument("--headless")
@@ -39,23 +39,14 @@ def download_tender_files_vergabe_autobahn(url, download_dir):
     file_path = None
     try:
         driver.get(url)
-        wait = WebDriverWait(driver, 10)
-        
-        if "PublicationControllerServlet" in url:
-            # Click the link to go to the next page
-            link = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "a.hiddenForLoggedInUser.noPrint.color-main")))
-            link.click()
-            # Now, wait for the new page to load
-            wait.until(EC.url_contains("TenderingProcedureDetails"))
-        
-        # Common steps for downloading files
-        download_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "a.btn-modal.zipFileContents")))
-        download_button.click()
-        modal = wait.until(EC.visibility_of_element_located((By.ID, 'detailModal')))
-        select_all_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='Alles auswählen']")))
-        select_all_button.click()
-        confirm_download_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='Auswahl herunterladen']")))
-        confirm_download_button.click()
+        submit_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, "//input[@class='button' and @type='submit' and @value='Anonym als Zip']"))
+        )
+        submit_button.click()
+        download_image = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, "//img[@src='/aJs/resources/common/pix/downl.gif' and @width='11' and @height='14' and @alt='Unterlagen downloaden']"))
+        )
+        download_image.click()
         wait_until_download_finishes()
         file_path = move_zip_file_to_public(download_dir)
         unzip_file(file_path, download_dir)
@@ -66,7 +57,7 @@ def download_tender_files_vergabe_autobahn(url, download_dir):
     finally:
         driver.quit()
     
-def gather_stage_vergabe_autobahn(harvest_job):
-        tender_ids = get_tender_ids_vergabe_autobahn()
-        return process_multiple_tenders_giving_publisher(tender_ids,harvest_job,download_tender_files_vergabe_autobahn,"vergabe_autobahn")
+def gather_stage_staatsanzeiger(harvest_job):
+        tender_ids = get_tender_ids_staatsanzeiger()
+        return process_multiple_tenders_giving_publisher(tender_ids,harvest_job,download_tender_files_staatsanzeiger,"staatsanzeiger")
 

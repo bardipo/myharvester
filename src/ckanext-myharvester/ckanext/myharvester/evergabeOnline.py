@@ -17,7 +17,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from ckanext.harvest.model import HarvestJob, HarvestObject, HarvestGatherError, \
                                     HarvestObjectError
-
+from selenium.common.exceptions import NoSuchElementException
+from .databaseConnection import get_tender_ids_evergabe_online
     
 def download_tender_files_evergabeOnline(tender_id, download_dir):
         chrome_options = Options()
@@ -50,17 +51,18 @@ def download_tender_files_evergabeOnline(tender_id, download_dir):
             if "cookieCheck" in driver.current_url:
                 driver.get(driver.current_url)
                 time.sleep(2)
-            contract_name_element = driver.find_element(By.CSS_SELECTOR, 'div.procedure-infos h4')
-            contract_name = contract_name_element.text
             zip_button = driver.find_element(By.CSS_SELECTOR, 'a[title="Als ZIP-Datei herunterladen"]')
             zip_button.click()
-            time.sleep(10)
-
+            wait_until_download_finishes()
             file_path = move_zip_file_to_public(download_dir)
+            unzip_file(file_path,download_dir)
+            return True
+        except NoSuchElementException:
+              logging.debug("Nothing to Download for  this id:" + tender_id)
+              return False
         finally:
             driver.quit()
-        return [file_path,contract_name]
     
 def gather_stage_evergabeOnline(harvest_job):
-        tender_ids = ['697632', '701009']
+        tender_ids = get_tender_ids_evergabe_online()
         return process_multiple_tenders_giving_publisher(tender_ids,harvest_job,download_tender_files_evergabeOnline,"evergabe_online")

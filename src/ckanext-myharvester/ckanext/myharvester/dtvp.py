@@ -17,11 +17,11 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from ckanext.harvest.model import HarvestJob, HarvestObject, HarvestGatherError, \
                                     HarvestObjectError
-import shutil
-from selenium.common.exceptions import TimeoutException
-from .databaseConnection import get_tender_ids_bieter_portal_db
- 
-def download_tender_files_bieter(tender_id, download_dir):
+from selenium.common.exceptions import NoSuchElementException
+from .databaseConnection import get_tender_ids_dtvp
+
+    
+def download_tender_files_dtvp(tender_id, download_dir):
         chrome_options = Options()
         chrome_options.add_argument("--headless")
         chrome_options.add_argument("--window-size=1920,1080")
@@ -40,25 +40,24 @@ def download_tender_files_bieter(tender_id, download_dir):
         }
         chrome_options.add_experimental_option("prefs", prefs)
         driver = webdriver.Chrome(options=chrome_options)
-
+    
         file_path = None
         try:
-            url = f'https://bieterportal.noncd.db.de/evergabe.bieter/eva/supplierportal/portal/subproject/{tender_id}/details'
+            url = f"https://www.dtvp.de/Satellite/public/company/project/{tender_id}/de/documents"
             driver.get(url)
-            wait = WebDriverWait(driver, 10)
-            download_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[.//span[text()='Herunterladen']]")))
+            time.sleep(5)
+            download_button = driver.find_element(By.XPATH, "//a[contains(@title, 'Alle Dokumente als ZIP-Datei herunterladen')]")
             download_button.click()
             wait_until_download_finishes()
             file_path = move_zip_file_to_public(download_dir)
-            unzip_file(file_path,download_dir)
+            unzip_file(file_path,download_dir) 
             return True
-        except TimeoutException:
+        except NoSuchElementException:
               print("Nothing to download")
               return False
         finally:
             driver.quit()
     
-def gather_stage_bieter(harvest_job):
-        tender_ids = get_tender_ids_bieter_portal_db()
-        return process_multiple_tenders_giving_publisher(tender_ids,harvest_job,download_tender_files_bieter,"bieter_portal")
-
+def gather_stage_dtvp(harvest_job):
+        tender_ids = get_tender_ids_dtvp()
+        return process_multiple_tenders_giving_publisher(tender_ids,harvest_job,download_tender_files_dtvp,"dtvp")
