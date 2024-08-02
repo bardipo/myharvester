@@ -15,7 +15,7 @@ FROM ckan/ckan-dev:2.10.4
 #RUN pip3 install -e 'git+https://github.com/ckan/ckanext-xloader.git@master#egg=ckanext-xloader' && \ 
 #    pip3 install -r ${APP_DIR}/src/ckanext-xloader/requirements.txt && \
 #    pip3 install -U requests[security]
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y \
     wget \
     gnupg \
     unzip \
