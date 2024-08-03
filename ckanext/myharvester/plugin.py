@@ -1,3 +1,4 @@
+import logging
 import time
 from ckan.plugins.core import SingletonPlugin, implements
 from ckanext.harvest.interfaces import IHarvester
@@ -14,6 +15,8 @@ class MyharvesterPlugin(SingletonPlugin):
     """
     A Test Harvester
     """
+  
+    logging.basicConfig(level=logging.INFO)
 
     implements(IHarvester)
 
@@ -107,10 +110,10 @@ class MyharvesterPlugin(SingletonPlugin):
       })
 
       try:
-          print("Now im trying to reach link")
+          logging.info("Now im trying to reach link")
           driver.get("https://vergabe.autobahn.de/NetServer/TenderingProcedureDetails?function=_Details&TenderOID=54321-NetTender-19101f44104-7ac7217fb59bc4dd&thContext=publications")
           wait = WebDriverWait(driver, 10)
-          print("I got link")
+          logging.info("I got link")
           download_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "a.btn-modal.zipFileContents")))
           download_button.click()
           modal = wait.until(EC.visibility_of_element_located((By.ID, 'detailModal')))
@@ -118,12 +121,12 @@ class MyharvesterPlugin(SingletonPlugin):
           select_all_button.click()
           confirm_download_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='Auswahl herunterladen']")))
           confirm_download_button.click()
-          print("I clicked link")
+          logging.info("I clicked link")
           time.sleep(20)
-          print("I waited 20 sec now im done")
+          logging.info("I waited 20 sec now im done")
           return []
       except TimeoutException:
-          print("Nothing to download")
+          logging.info("Nothing to download")  
           return []
       finally:
           driver.quit()
