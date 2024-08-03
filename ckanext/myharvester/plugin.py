@@ -101,13 +101,14 @@ class MyharvesterPlugin(SingletonPlugin):
       chrome_options.add_argument('disable-infobars')
       chrome_options.add_argument("--disable-extensions")
       chrome_options.add_argument('--disable-dev-shm-usage')
-      driver = webdriver.Chrome(options=chrome_options)
       chrome_options.add_experimental_option("prefs", {
         "download.default_directory": download_dir,  # İndirmeleri /storage dizinine yap
         "download.prompt_for_download": False,
         "download.directory_upgrade": True,
         "safebrowsing.enabled": True
       })
+      driver = webdriver.Chrome(options=chrome_options)
+      
 
       try:
           logging.info("Now im trying to reach link")
