@@ -1,3 +1,4 @@
+import time
 from ckan.plugins.core import SingletonPlugin, implements
 from ckanext.harvest.interfaces import IHarvester
 from selenium import webdriver
@@ -85,6 +86,8 @@ class MyharvesterPlugin(SingletonPlugin):
         """
 
     def gather_stage(self, harvest_job):
+
+      download_dir = "/storage"
         # Set up Chrome options
       chrome_options = Options()
       chrome_options.add_argument("--headless")
@@ -96,12 +99,18 @@ class MyharvesterPlugin(SingletonPlugin):
       chrome_options.add_argument("--disable-extensions")
       chrome_options.add_argument('--disable-dev-shm-usage')
       driver = webdriver.Chrome(options=chrome_options)
+      chrome_options.add_experimental_option("prefs", {
+        "download.default_directory": download_dir,  # İndirmeleri /storage dizinine yap
+        "download.prompt_for_download": False,
+        "download.directory_upgrade": True,
+        "safebrowsing.enabled": True
+      })
 
-      file_path = None
       try:
+          print("Now im trying to reach link")
           driver.get("https://vergabe.autobahn.de/NetServer/TenderingProcedureDetails?function=_Details&TenderOID=54321-NetTender-19101f44104-7ac7217fb59bc4dd&thContext=publications")
           wait = WebDriverWait(driver, 10)
-        
+          print("I got link")
           download_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "a.btn-modal.zipFileContents")))
           download_button.click()
           modal = wait.until(EC.visibility_of_element_located((By.ID, 'detailModal')))
@@ -109,10 +118,13 @@ class MyharvesterPlugin(SingletonPlugin):
           select_all_button.click()
           confirm_download_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='Auswahl herunterladen']")))
           confirm_download_button.click()
-          return True
+          print("I clicked link")
+          time.sleep(20)
+          print("I waited 20 sec now im done")
+          return []
       except TimeoutException:
           print("Nothing to download")
-          return False
+          return []
       finally:
           driver.quit()
 
