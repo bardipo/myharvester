@@ -90,7 +90,6 @@ class MyharvesterPlugin(SingletonPlugin):
 
     def gather_stage(self, harvest_job):
 
-      download_dir = "/storage"
         # Set up Chrome options
       chrome_options = Options()
       chrome_options.add_argument("--headless")
@@ -101,12 +100,6 @@ class MyharvesterPlugin(SingletonPlugin):
       chrome_options.add_argument('disable-infobars')
       chrome_options.add_argument("--disable-extensions")
       chrome_options.add_argument('--disable-dev-shm-usage')
-      chrome_options.add_experimental_option("prefs", {
-        "download.default_directory": download_dir,  # İndirmeleri /storage dizinine yap
-        "download.prompt_for_download": False,
-        "download.directory_upgrade": True,
-        "safebrowsing.enabled": True
-      })
       driver = webdriver.Chrome(options=chrome_options)
       
 
