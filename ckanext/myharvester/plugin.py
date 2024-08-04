@@ -1,12 +1,21 @@
+import logging
+import time
 from ckan.plugins.core import SingletonPlugin, implements
 from ckanext.harvest.interfaces import IHarvester
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.action_chains import ActionChains
+from selenium.common.exceptions import TimeoutException
 
 
 class MyharvesterPlugin(SingletonPlugin):
     """
     A Test Harvester
     """
-
+    logging.basicConfig(level=logging.INFO)
     implements(IHarvester)
 
     def info(self):
@@ -78,25 +87,45 @@ class MyharvesterPlugin(SingletonPlugin):
         """
 
     def gather_stage(self, harvest_job):
-        """
-        The gather stage will receive a HarvestJob object and will be
-        responsible for:
-            - gathering all the necessary objects to fetch on a later.
-              stage (e.g. for a CSW server, perform a GetRecords request)
-            - creating the necessary HarvestObjects in the database, specifying
-              the guid and a reference to its job. The HarvestObjects need a
-              reference date with the last modified date for the resource, this
-              may need to be set in a different stage depending on the type of
-              source.
-            - creating and storing any suitable HarvestGatherErrors that may
-              occur.
-            - returning a list with all the ids of the created HarvestObjects.
-            - to abort the harvest, create a HarvestGatherError and raise an
-              exception. Any created HarvestObjects will be deleted.
+        download_dir = "/storage"
+        chrome_options = Options()
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--window-size=1920,1080")
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-gpu")
+        chrome_options.add_argument('start-maximized')
+        chrome_options.add_argument('disable-infobars')
+        chrome_options.add_argument("--disable-extensions")
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        chrome_options.add_experimental_option("prefs", {
+        "download.default_directory": download_dir,  # İndirmeleri /storage dizinine yap
+        "download.prompt_for_download": False,
+        "download.directory_upgrade": True,
+        "safebrowsing.enabled": True
+      })
+        driver = webdriver.Chrome(options=chrome_options)
 
-        :param harvest_job: HarvestJob object
-        :returns: A list of HarvestObject ids
-        """
+        file_path = None
+        try:
+            driver.get("https://vergabe.autobahn.de/NetServer/TenderingProcedureDetails?function=_Details&TenderOID=54321-NetTender-19101f44104-7ac7217fb59bc4dd&thContext=publications")
+            wait = WebDriverWait(driver, 10)
+            logging.info("I got website")
+            download_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "a.btn-modal.zipFileContents")))
+            download_button.click()
+            modal = wait.until(EC.visibility_of_element_located((By.ID, 'detailModal')))
+            select_all_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='Alles auswählen']")))
+            select_all_button.click()
+            confirm_download_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='Auswahl herunterladen']")))
+            confirm_download_button.click()
+            logging.info("I clicked button")
+            time.sleep(20)
+            logging.info("I am done")
+            return []
+        except TimeoutException:
+            print("Nothing to download")
+            return []
+        finally:
+            driver.quit()
 
     def fetch_stage(self, harvest_object):
         """
@@ -116,6 +145,7 @@ class MyharvesterPlugin(SingletonPlugin):
         :returns: True if successful, 'unchanged' if nothing to import after
                   all, False if not successful
         """
+        return False
 
     def import_stage(self, harvest_object):
         """
@@ -143,3 +173,4 @@ class MyharvesterPlugin(SingletonPlugin):
         :returns: True if the action was done, "unchanged" if the object didn't
                   need harvesting after all or False if there were errors.
         """
+        return False
