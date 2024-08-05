@@ -1,159 +1,180 @@
-import logging
-import time
 from ckan.plugins.core import SingletonPlugin, implements
 from ckanext.harvest.interfaces import IHarvester
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
+import logging
+from ckan import model
+from ckan.model import Session, Package
+from ckan.logic import ValidationError, NotFound, get_action
+import json
+from ckanext.harvest.model import HarvestJob, HarvestObject, HarvestGatherError, \
+                                    HarvestObjectError
+from .helpers import *
+from .vergabeAutobahn import gather_stage_vergabe_autobahn
+from .bieterPortal import gather_stage_bieter
+from .evergabe import gather_stage_evergabe
+from .evergabeOnline import gather_stage_evergabeOnline
+from .vergabemarktplatz_brandenburg import gather_stage_vergabeBrandenburg
+from .dtvp import gather_stage_dtvp
+from .vergabeNiedersachsen import gather_stage_vergabe_niedersachsen
+from .vergabeBremen import gather_stage_vergabe_bremen
+from .meinauftrag import gather_stage_meinauftrag
+from .ausmass import gather_stage_aumass
+from .staatsanzeiger import gather_stage_staatsanzeiger
+from .vergabeVmstart import gather_stage_vergabe_vmstart
+from .vergabeNrw import gather_stage_vergabe_nrw
+from .vmpRheinland import gather_stage_vmp_rheinland
+from .base import HarvesterBase
 
-
-class MyharvesterPlugin(SingletonPlugin):
-    """
-    A Test Harvester
-    """
-    logging.basicConfig(level=logging.INFO)
+class MyharvesterPlugin(HarvesterBase):
     implements(IHarvester)
+    logging.basicConfig(level=logging.DEBUG)
+    log = logging.getLogger(__name__)
 
+  
     def info(self):
-        """
-        Harvesting implementations must provide this method, which will return
-        a dictionary containing different descriptors of the harvester. The
-        returned dictionary should contain:
-        * name: machine-readable name. This will be the value stored in the
-          database, and the one used by ckanext-harvest to call the appropiate
-          harvester.
-        * title: human-readable name. This will appear in the form's select box
-          in the WUI.
-        * description: a small description of what the harvester does. This
-          will appear on the form as a guidance to the user.
-        A complete example may be::
-            {
-                'name': 'csw',
-                'title': 'CSW Server',
-                'description': 'A server that implements OGC's Catalog Service
-                                for the Web (CSW) standard'
-            }
-        :returns: A dictionary with the harvester descriptors
-        """
         return {
             'name': 'myharvester',
             'title': 'My Harvester',
-            'description': 'A test harvester for CKAN'
+            'description': 'A test harvester for CKAN that handles PDF and ZIP resources'
         }
-    def validate_config(self, config):
-        """
-        [optional]
-        Harvesters can provide this method to validate the configuration
-        entered in the form. It should return a single string, which will be
-        stored in the database.  Exceptions raised will be shown in the form's
-        error messages.
-        :param harvest_object_id: Config string coming from the form
-        :returns: A string with the validated configuration options
-        """
+    
     def get_original_url(self, harvest_object_id):
-        """
-        [optional]
-        This optional but very recommended method allows harvesters to return
-        the URL to the original remote document, given a Harvest Object id.
-        Note that getting the harvest object you have access to its guid as
-        well as the object source, which has the URL.
-        This URL will be used on error reports to help publishers link to the
-        original document that has the errors. If this method is not provided
-        or no URL is returned, only a link to the local copy of the remote
-        document will be shown.
-        Examples:
-            * For a CKAN record: http://{ckan-instance}/api/rest/{guid}
-            * For a WAF record: http://{waf-root}/{file-name}
-            * For a CSW record: http://{csw-server}/?Request=GetElementById&Id={guid}&...
-        :param harvest_object_id: HarvestObject id
-        :returns: A string with the URL to the original document
-        """
+        obj = HarvestObject.get(harvest_object_id)
+        if not obj:
+            return None
+        original_url = obj.source.url
+        return original_url
+    
+
 
     def gather_stage(self, harvest_job):
-        download_dir = "/storage"
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--window-size=1920,1080")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument('start-maximized')
-        chrome_options.add_argument('disable-infobars')
-        chrome_options.add_argument("--disable-extensions")
-        chrome_options.add_argument('--disable-dev-shm-usage')
-        chrome_options.add_experimental_option("prefs", {
-        "download.default_directory": download_dir,  # İndirmeleri /storage dizinine yap
-        "download.prompt_for_download": False,
-        "download.directory_upgrade": True,
-        "safebrowsing.enabled": True
-      })
-        driver = webdriver.Chrome(options=chrome_options)
+        self.log.debug('Gather stage for: %s' % harvest_job.source.url)
+        
+        if "vergabe.autobahn.de" in harvest_job.source.url:
+            return gather_stage_vergabe_autobahn(harvest_job)
+        elif "https://bieterportal.noncd.db.de/" in harvest_job.source.url:
+            return gather_stage_bieter(harvest_job)
+        elif "https://www.evergabe.de/" in harvest_job.source.url:
+            return gather_stage_evergabe(harvest_job)
+        elif "https://www.evergabe-online.de/" in harvest_job.source.url:
+            return gather_stage_evergabeOnline(harvest_job)
+        elif "https://vergabemarktplatz.brandenburg.de/" in harvest_job.source.url:
+            return gather_stage_vergabeBrandenburg(harvest_job)
+        elif "https://www.dtvp.de/" in harvest_job.source.url:
+            return gather_stage_dtvp(harvest_job)
+        elif "https://vergabe.niedersachsen.de/" in harvest_job.source.url:
+            return gather_stage_vergabe_niedersachsen(harvest_job)
+        elif "https://vergabe.bremen.de/" in harvest_job.source.url:
+            return gather_stage_vergabe_bremen(harvest_job)
+        elif "https://www.meinauftrag.rib.de/" in harvest_job.source.url:
+            return gather_stage_meinauftrag(harvest_job)
+        elif "https://plattform.aumass.de/" in harvest_job.source.url:
+            return gather_stage_aumass(harvest_job)
+        elif "https://www.staatsanzeiger-eservices.de/" in harvest_job.source.url:
+            return gather_stage_staatsanzeiger(harvest_job)
+        elif "https://vergabe.vmstart.de/" in harvest_job.source.url:
+            return gather_stage_vergabe_vmstart(harvest_job)
+        elif "https://www.evergabe.nrw.de/" in harvest_job.source.url:
+            return gather_stage_vergabe_nrw(harvest_job)
+        elif "https://www.vmp-rheinland.de/" in harvest_job.source.url:
+            return gather_stage_vmp_rheinland(harvest_job)
 
-        file_path = None
-        try:
-            driver.get("https://vergabe.autobahn.de/NetServer/TenderingProcedureDetails?function=_Details&TenderOID=54321-NetTender-19101f44104-7ac7217fb59bc4dd&thContext=publications")
-            wait = WebDriverWait(driver, 10)
-            logging.info("I got website")
-            download_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "a.btn-modal.zipFileContents")))
-            download_button.click()
-            modal = wait.until(EC.visibility_of_element_located((By.ID, 'detailModal')))
-            select_all_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='Alles auswählen']")))
-            select_all_button.click()
-            confirm_download_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='Auswahl herunterladen']")))
-            confirm_download_button.click()
-            logging.info("I clicked button")
-            time.sleep(20)
-            logging.info("I am done")
-            return []
-        except TimeoutException:
-            print("Nothing to download")
-            return []
-        finally:
-            driver.quit()
+        raise HarvestGatherError()
 
     def fetch_stage(self, harvest_object):
-        """
-        The fetch stage will receive a HarvestObject object and will be
-        responsible for:
-            - getting the contents of the remote object (e.g. for a CSW server,
-              perform a GetRecordById request).
-            - saving the content in the provided HarvestObject.
-            - creating and storing any suitable HarvestObjectErrors that may
-              occur.
-            - returning True if everything is ok (ie the object should now be
-              imported), "unchanged" if the object didn't need harvesting after
-              all (ie no error, but don't continue to import stage) or False if
-              there were errors.
-        :param harvest_object: HarvestObject object
-        :returns: True if successful, 'unchanged' if nothing to import after
-                  all, False if not successful
-        """
-        return False
+        self.log.debug('Fetch stage for object: %s' % harvest_object.id)
+        return True
+    
 
     def import_stage(self, harvest_object):
-        """
-        The import stage will receive a HarvestObject object and will be
-        responsible for:
-            - performing any necessary action with the fetched object (e.g.
-              create, update or delete a CKAN package).
-              Note: if this stage creates or updates a package, a reference
-              to the package should be added to the HarvestObject.
-            - setting the HarvestObject.package (if there is one)
-            - setting the HarvestObject.current for this harvest:
-              - True if successfully created/updated
-              - False if successfully deleted
-            - setting HarvestObject.current to False for previous harvest
-              objects of this harvest source if the action was successful.
-            - creating and storing any suitable HarvestObjectErrors that may
-              occur.
-            - creating the HarvestObject - Package relation (if necessary)
-            - returning True if the action was done, "unchanged" if the object
-              didn't need harvesting after all or False if there were errors.
-        NB You can run this stage repeatedly using 'paster harvest import'.
-        :param harvest_object: HarvestObject object
-        :returns: True if the action was done, "unchanged" if the object didn't
-                  need harvesting after all or False if there were errors.
-        """
+        self.log.debug('Import stage for object: %s' % harvest_object.id)
+        self.log.debug('Harvesting object: %s' % harvest_object)
+
+        logging.debug('In CKANHarvester import_stage')
+
+        base_context = {'model': model, 'session': model.Session, 'user': self._get_user_name()}
+
+        if not harvest_object:
+            logging.error('No harvest object received')
+            return False
+
+        if harvest_object.content is None:
+            self._save_object_error('Empty content for object %s' % harvest_object.id, harvest_object, 'Import')
+            return False
+
+        try:
+            # Parse the JSON content to get the tender's data
+            package_dict = json.loads(harvest_object.content)
+            tender_id = package_dict.get('tender_id')
+            contract_name = package_dict.get('contract_name')
+            resources = package_dict.get('resources', [])
+
+            if not resources:
+                self._save_object_error('No resources found for object %s' % harvest_object.id, harvest_object, 'Import')
+                return False
+
+
+            # Create a new package dictionary with CKAN resource URLs
+            package_dict = {
+                'id': tender_id,
+                'name': tender_id,
+                'title': contract_name,
+            }
+
+            # Assign dataset to the source organization
+            source_dataset = get_action('package_show')(base_context.copy(), {'id': harvest_object.job.source.id})
+            local_org = source_dataset.get('owner_org')
+            package_dict['owner_org'] = local_org
+
+            # Create or update the dataset in CKAN
+            result = self._create_or_update_package(package_dict, harvest_object, package_dict_form='package_show')
+
+            # Handle file uploads to CKAN
+            ckan_resources = []
+            for resource in resources:
+                file_path = resource.get('url')
+                if os.path.isfile(file_path):
+                    # Upload the file to CKAN
+                    resource_id = self.upload_file_to_ckan(file_path, tender_id, base_context['user'])
+                    if resource_id:
+                        ckan_resources.append({
+                            'id': resource_id,
+                            'name': os.path.basename(file_path),
+                            'url': f'/dataset/{tender_id}/resource/{resource_id}/download/{os.path.basename(file_path)}'
+                        })
+
+            package_dict = {
+                'id': tender_id,
+                'name': tender_id,
+                'title': contract_name,
+                'resources': ckan_resources,
+                'owner_org' : local_org,
+            }
+
+            result = self._create_or_update_package(package_dict, harvest_object, package_dict_form='package_show')
+            return result
+
+        except ValidationError as e:
+            self._save_object_error('Invalid package with GUID %s: %r' % (harvest_object.guid, e.error_dict), harvest_object, 'Import')
+        except Exception as e:
+            self._save_object_error('%s' % e, harvest_object, 'Import')
+
         return False
+
+    def upload_file_to_ckan(self, file_path, dataset_id, user):
+        url = "https://procurdat.azurewebsites.net/api/3/action/resource_create"
+        with open(file_path, 'rb') as file_data:
+            response = requests.post(
+                url,
+                data={
+                    'package_id': dataset_id,
+                    'name': os.path.basename(file_path),
+                    'url_type': 'upload',
+                },
+                headers={'Authorization': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJDMjJ0cFdTMUFucXEwTWZhS3Y1dzZTZTRVRHk5a3pISE02aEZfQjZNMUM4IiwiaWF0IjoxNzIyOTAwMTc4fQ.xzcxtdl-YwfKOAMgICWUaaXQYL3BMa3JWrWyduza8kQ'},
+                files={'upload': file_data}
+            )
+        if response.status_code == 200:
+            return response.json()['result']['id']
+        else:
+            self.log.error(f"Failed to upload file {file_path}: {response.text}")
+            return None
