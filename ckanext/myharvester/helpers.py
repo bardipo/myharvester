@@ -65,7 +65,7 @@ def ensure_directory_exists(path):
 
 
 def process_multiple_tenders_giving_publisher(tenders, harvest_job, download_function, publisher_name):
-    download_dir = ensure_directory_exists(os.path.join("/storage"),"public")
+    download_dir = ensure_directory_exists(os.path.join("/storage","public"))
     publisher_path = ensure_directory_exists(os.path.join(download_dir, publisher_name))
     harvest_object_ids = []
 
