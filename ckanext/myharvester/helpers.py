@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from hashlib import sha1
 import json
 import logging
@@ -52,6 +53,16 @@ def unzip_file(file_path, extract_to,password=None):
                     dir_path = os.path.join(root, dir)
                     if not os.listdir(dir_path):
                         os.rmdir(dir_path)
+        except zipfile.BadZipFile as e:
+            logging.error('BadZipFile error while unzipping: %s' % str(e))
+            corrupted_dir = '/storage/public/corruptedfiles'
+            if not os.path.exists(corrupted_dir):
+                os.makedirs(corrupted_dir)
+            # Log the path and date to logs.txt
+            with open(os.path.join(corrupted_dir, 'logs.txt'), 'a') as log_file:
+                log_file.write('Corrupted file moved from: %s | Date: %s\n' % (file_path, datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')))
+            corrupted_path = os.path.join(corrupted_dir, os.path.basename(file_path))
+            os.rename(file_path, corrupted_path)
         except FileNotFoundError as e:
             logging.error('File not found during unzipping: %s' % str(e))
         except OSError as e:
@@ -98,25 +109,20 @@ def process_multiple_tenders_giving_publisher(tenders, harvest_job, download_fun
                 json.dump(doc, file, ensure_ascii=False, indent=4)
         except Exception as e:
             print(f"Error saving document {tender_id} to meta.json: {e}")
-
-        # Create a list of resources for this tender
-        resources = []
-        for file in os.listdir(tender_download_path):
-            file_path = os.path.join(tender_download_path, file)
+        files = os.listdir(tender_download_path)
+        for file in files:
+            file_path = os.path.join(tender_download_path,file)
             if os.path.isfile(file_path):
-                resources.append({'url': file_path, 'name': file})
-
-        # Create a single HarvestObject for the tender with all resources
-        guid = sha1(f"{publisher_name}-{tender_id}".encode('utf-8')).hexdigest()  # Create a unique GUID for the tender
-        obj = Session.query(HarvestObject).filter_by(guid=guid).first()
-        if not obj:
-            content = json.dumps({'resources': resources, 'contract_name': contract_name, 'tender_id': tender_id})
-            obj = HarvestObject(guid=guid, job=harvest_job, content=content)
-            Session.add(obj)
-            Session.commit()
-        harvest_object_ids.append(obj.id)
-
-    return harvest_object_ids
+                file_hash = sha1(os.path.basename(file_path).encode('utf-8')).hexdigest()
+                guid = f"{tender_id}-{file_hash}"
+                obj = Session.query(HarvestObject).filter_by(guid=guid).first()
+                if not obj:
+                    content = json.dumps({'file_path': file_path, 'contract_name': contract_name})
+                    obj = HarvestObject(guid=guid, job=harvest_job, content=content)
+                    Session.add(obj)
+                    Session.commit()
+                harvest_object_ids.append(obj.id)
+        return harvest_object_ids
 
 
 

@@ -3,15 +3,16 @@ from pymongo import MongoClient
 import re
 
 # MongoDB connection setup
-connection_url = "mongodb://134.102.23.199:27017/?directConnection=true"
-db_name = "TESTING"
-collection_name = "beschas"
-client = MongoClient(connection_url)
-db = client[db_name]
-collection = db[collection_name]
-six_months_ago = (datetime.now(timezone.utc) - timedelta(days=5))  # approximately 6 months
+
+six_months_ago = (datetime.now(timezone.utc) - timedelta(days=6*30))
 
 def get_tender_ids_evergabe_online():
+    connection_url = "mongodb://134.102.23.199:27017/?directConnection=true"
+    db_name = "TESTING"
+    collection_name = "beschas"
+    client = MongoClient(connection_url)
+    db = client[db_name]
+    collection = db[collection_name]
     try:
         query = {
             "releases.tender.documents.url": {"$regex": "https://www.evergabe-online.de"},
@@ -45,6 +46,12 @@ def get_tender_ids_evergabe_online():
         return []
 
 def get_tender_ids_evergabe():
+    connection_url = "mongodb://134.102.23.199:27017/?directConnection=true"
+    db_name = "TESTING"
+    collection_name = "beschas"
+    client = MongoClient(connection_url)
+    db = client[db_name]
+    collection = db[collection_name]
     try:
         query = {
             "releases.tender.documents.url": {"$regex": "https://www.evergabe.de/"},
@@ -85,6 +92,12 @@ def get_tender_ids_evergabe():
         return []
 
 def get_tender_ids_bieter_portal_db():
+    connection_url = "mongodb://134.102.23.199:27017/?directConnection=true"
+    db_name = "TESTING"
+    collection_name = "beschas"
+    client = MongoClient(connection_url)
+    db = client[db_name]
+    collection = db[collection_name]
     try:
         query = {
             "releases.tender.documents.url": {"$regex": "https://bieterportal.noncd.db.de/"},
@@ -118,6 +131,12 @@ def get_tender_ids_bieter_portal_db():
         return []
 
 def get_tender_ids_vergabe_autobahn():
+    connection_url = "mongodb://134.102.23.199:27017/?directConnection=true"
+    db_name = "TESTING"
+    collection_name = "beschas"
+    client = MongoClient(connection_url)
+    db = client[db_name]
+    collection = db[collection_name]
     try:
         query = {
             "releases.tender.documents.url": {"$regex": "https://vergabe.autobahn.de/"},
@@ -158,6 +177,12 @@ def get_tender_ids_vergabe_autobahn():
     
 
 def get_tender_ids_vergabemarktplatz_brandenburg():
+    connection_url = "mongodb://134.102.23.199:27017/?directConnection=true"
+    db_name = "TESTING"
+    collection_name = "beschas"
+    client = MongoClient(connection_url)
+    db = client[db_name]
+    collection = db[collection_name]
     try:
         query = {
             "releases.tender.documents.url": {"$regex": "https://vergabemarktplatz.brandenburg.de/"},
@@ -193,6 +218,12 @@ def get_tender_ids_vergabemarktplatz_brandenburg():
     
     
 def get_tender_ids_dtvp():
+    connection_url = "mongodb://134.102.23.199:27017/?directConnection=true"
+    db_name = "TESTING"
+    collection_name = "beschas"
+    client = MongoClient(connection_url)
+    db = client[db_name]
+    collection = db[collection_name]
     try:
         query = {
             "releases.tender.documents.url": {"$regex": "https://www.dtvp.de/"},
@@ -228,6 +259,12 @@ def get_tender_ids_dtvp():
     
 
 def get_tender_ids_vergabe_niedersachsen():
+    connection_url = "mongodb://134.102.23.199:27017/?directConnection=true"
+    db_name = "TESTING"
+    collection_name = "beschas"
+    client = MongoClient(connection_url)
+    db = client[db_name]
+    collection = db[collection_name]
     try:
         query = {
             "releases.tender.documents.url": {"$regex": "https://vergabe.niedersachsen.de/"},
@@ -264,6 +301,12 @@ def get_tender_ids_vergabe_niedersachsen():
 
 
 def get_tender_ids_vergabe_bremen():
+    connection_url = "mongodb://134.102.23.199:27017/?directConnection=true"
+    db_name = "TESTING"
+    collection_name = "beschas"
+    client = MongoClient(connection_url)
+    db = client[db_name]
+    collection = db[collection_name]
     try:
         query = {
             "releases.tender.documents.url": {"$regex": "https://vergabe.bremen.de/"},
@@ -304,6 +347,12 @@ def get_tender_ids_vergabe_bremen():
     
 
 def get_tender_ids_meinauftrag():
+    connection_url = "mongodb://134.102.23.199:27017/?directConnection=true"
+    db_name = "TESTING"
+    collection_name = "beschas"
+    client = MongoClient(connection_url)
+    db = client[db_name]
+    collection = db[collection_name]
     try:
         query = {
             "releases.tender.documents.url": {"$regex": "https://www.meinauftrag.rib.de/"},
@@ -345,7 +394,6 @@ def get_tender_ids_aumass():
     client = MongoClient(connection_url)
     db = client[db_name]
     collection = db[collection_name]
-    six_months_ago = (datetime.now(timezone.utc) - timedelta(days=5))
     try:
         query = {
             "releases.tender.documents.url": {"$regex": "https://plattform.aumass.de/"},
@@ -387,7 +435,6 @@ def get_tender_ids_staatsanzeiger():
     client = MongoClient(connection_url)
     db = client[db_name]
     collection = db[collection_name]
-    six_months_ago = (datetime.now(timezone.utc) - timedelta(days=5))
     try:
         query = {
             "releases.tender.documents.url": {"$regex": "https://www.staatsanzeiger-eservices.de/aJs/EFormsBekVuUrl\\?z_param="},
@@ -431,7 +478,6 @@ def get_tender_ids_vergabe_vmstart():
     client = MongoClient(connection_url)
     db = client[db_name]
     collection = db[collection_name]
-    six_months_ago = (datetime.now(timezone.utc) - timedelta(days=8))
     try:
         query = {
             "releases.tender.documents.url": {"$regex": "https://vergabe.vmstart.de/"},
@@ -478,7 +524,6 @@ def get_tender_ids_vergabe_nrw():
     client = MongoClient(connection_url)
     db = client[db_name]
     collection = db[collection_name]
-    six_months_ago = (datetime.now(timezone.utc) - timedelta(days=4))
     try:
         query = {
             "releases.tender.documents.url": {"$regex": "https://www.evergabe.nrw.de/"},
@@ -520,7 +565,6 @@ def get_tender_ids_vmp_rheinland():
     client = MongoClient(connection_url)
     db = client[db_name]
     collection = db[collection_name]
-    six_months_ago = (datetime.now(timezone.utc) - timedelta(days=6))
     try:
         query = {
             "releases.tender.documents.url": {"$regex": "https://www.vmp-rheinland.de/"},
