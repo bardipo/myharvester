@@ -29,6 +29,7 @@ def download_tender_files_evergabeOnline(tender_id, download_dir):
         try:
             base_url = 'https://www.evergabe-online.de'
             url = f'{base_url}/tenderdocuments.html?6&id={tender_id}'
+            logging.info("Scrapping the website for " + tender_id)
             driver.get(url)
             wait = WebDriverWait(driver,10)
             if "cookieCheck" in driver.current_url:
@@ -39,9 +40,10 @@ def download_tender_files_evergabeOnline(tender_id, download_dir):
             wait_until_download_finishes(download_dir)
             file_path = give_latest_file(download_dir)
             unzip_file(file_path,download_dir)
+            logging.info("Files downloaded for " + tender_id)
             return True
         except NoSuchElementException:
-              logging.debug("Nothing to Download for  this id:" + tender_id)
+              logging.error("Nothing to Download for " + tender_id)
               return False
         finally:
             driver.quit()

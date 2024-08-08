@@ -29,16 +29,15 @@ def download_tender_files_aumass(url, download_dir):
 
     file_path = None
     try:
+        logging.info("Scrapping the website for " + url)
         driver.get(url)
-        
         try:
             cookies_accept_button = WebDriverWait(driver, 10).until(
                 EC.element_to_be_clickable((By.XPATH, "//a[@class='cc-btn cc-dismiss' and text()='Ich stimme zu.']"))
             )
             cookies_accept_button.click()
-            print("Cookies accepted")
         except TimeoutException:
-            print("No cookies warning found or it did not appear in time")
+            logging.info("No Cookies")
         
         wait = WebDriverWait(driver, 10)
         download_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//a[contains(@class, 'btn-download') and contains(text(), 'DOWNLOAD')]")))
@@ -49,27 +48,25 @@ def download_tender_files_aumass(url, download_dir):
             modal = WebDriverWait(driver, 5).until(
                 EC.presence_of_element_located((By.CLASS_NAME, 'modal-dialog'))
             )
-            print("Registration modal appeared")
-
             ohne_registrierung_button = WebDriverWait(driver, 1).until(
                 EC.element_to_be_clickable((By.XPATH, "//div[@id='freierDownloadLinkArea']/a[contains(text(), 'Ohne Registrierung herunterladen')]"))
             )
             ohne_registrierung_button.click()
-            print("Clicked 'Ohne Registrierung herunterladen'")
 
         except TimeoutException:
-            print("Registration modal did not appear")
+            logging.info("No Modal Check for " + url)
 
         wait_until_download_finishes(download_dir)
         file_path = give_latest_file(download_dir)
         unzip_file(file_path, download_dir)
+        logging.info("Downloaded files for " + url)
         return True
 
     except NoSuchElementException:
-        print("Nothing to download")
+        logging.error("Nothing to download for " + url)
         return False
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logging.error(e)
         return False
     finally:
         driver.quit()

@@ -25,6 +25,7 @@ def fetch_download_urls_meinauftrag(url,tender_download_path):
     driver = webdriver.Chrome(options=chrome_options)
 
     try:
+        logging.info("Scrapping website for the " + url)
         driver.get(url)
         wait = WebDriverWait(driver,10)
         try:
@@ -32,7 +33,7 @@ def fetch_download_urls_meinauftrag(url,tender_download_path):
             cookie_button.click()
             time.sleep(2)
         except NoSuchElementException:
-            print("No cookie banner found")
+            logging.info("No Cookie" + url)
         try:
             toggle_button = driver.find_element(By.ID, "toggleAllFolder")
             toggle_button.click()
@@ -41,14 +42,14 @@ def fetch_download_urls_meinauftrag(url,tender_download_path):
             time.sleep(5)
             toggle_button.click()
         except NoSuchElementException:
-            print("Nothing to download skipping...")
+            logging.info("Nothing to download for " + url + " skipping...")
             return False
         time.sleep(5)
         try:
             download_buttons = driver.find_elements(By.XPATH, "//tbody//button[@class='btn btn-primary btn-sm']")
             download_links = []
         except NoSuchElementException:
-            print("Nothing to download skipping...")
+            logging.info("Nothing to download for " + url + " skipping...")
             return False
         for button in download_buttons:
             onclick_attr = button.get_attribute("onclick")

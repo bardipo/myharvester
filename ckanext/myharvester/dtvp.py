@@ -28,16 +28,18 @@ def download_tender_files_dtvp(tender_id, download_dir):
         file_path = None
         try:
             url = f"https://www.dtvp.de/Satellite/public/company/project/{tender_id}/de/documents"
+            logging.info("Scrapping the website for " + tender_id)
             driver.get(url)
             wait = WebDriverWait(driver,10)
             download_button = driver.find_element(By.XPATH, "//a[contains(@title, 'Alle Dokumente als ZIP-Datei herunterladen')]")
             download_button.click()
             wait_until_download_finishes(download_dir)
             file_path = give_latest_file(download_dir)
-            unzip_file(file_path,download_dir) 
+            unzip_file(file_path,download_dir)
+            logging.info("Files downloaded for " + tender_id) 
             return True
         except NoSuchElementException:
-              print("Nothing to download")
+              logging.error("Nothing to download for " + tender_id)
               return False
         finally:
             driver.quit()

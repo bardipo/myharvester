@@ -4,7 +4,7 @@ import re
 
 # MongoDB connection setup
 
-six_months_ago = (datetime.now(timezone.utc) - timedelta(days=6*30))
+six_months_ago = (datetime.now(timezone.utc) - timedelta(days=3*30))
 
 def get_tender_ids_evergabe_online():
     connection_url = "mongodb://134.102.23.199:27017/?directConnection=true"

@@ -27,6 +27,7 @@ def download_tender_files_vergabe_brandenburg(tender_id, download_dir):
     
         file_path = None
         try:
+            logging.info("Scrapping website for " + tender_id)
             url = f"https://vergabemarktplatz.brandenburg.de/VMPSatellite/public/company/project/{tender_id}/de/documents"
             driver.get(url)
             wait = WebDriverWait(driver,10)
@@ -34,10 +35,11 @@ def download_tender_files_vergabe_brandenburg(tender_id, download_dir):
             download_button.click()
             wait_until_download_finishes(download_dir)
             file_path = give_latest_file(download_dir)
-            unzip_file(file_path,download_dir) 
+            unzip_file(file_path,download_dir)
+            logging.info("Files downloaded for " + tender_id) 
             return True
         except NoSuchElementException:
-              print("Nothing to download")
+              logging.info("Nothing to download for " + tender_id)
               return False
         finally:
             driver.quit()

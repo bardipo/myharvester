@@ -7,7 +7,7 @@ from .databaseConnection import get_tender_ids_evergabe
 
 
 def fetch_download_urls_evergabe(tender_id,tender_download_path):
-
+        logging.info("Scrapping the website for " + tender_id)
         url = f'https://www.evergabe.de/unterlagen/{tender_id}'
         response = requests.get(url)
         file_paths = []
@@ -15,7 +15,8 @@ def fetch_download_urls_evergabe(tender_id,tender_download_path):
             soup = BeautifulSoup(response.content, 'html.parser')
             links = soup.find_all('a', {'data-turbo': 'false', 'class': 'btn btn-primary'})
             if links == []:
-                 return False
+                logging.info("Nothing to download for" + tender_id)
+                return False
             final_links = []
             for link in links:
                 final_links.append(f"https://www.evergabe.de/{link['href']}")
@@ -40,13 +41,17 @@ def fetch_download_urls_evergabe(tender_id,tender_download_path):
                 files = os.listdir(tender_download_path)
                 for file in files:
                      file_paths.append(os.path.join(tender_download_path,file))
+                logging.info("Files downloaded for" + tender_id)
                 return True
             except requests.HTTPError as e:
                 logging.error('HTTP error fetching %s: %s' % (url, str(e)))
+                return False
             except requests.RequestException as e:
                 logging.error('Error fetching %s: %s' % (url, str(e)))
+                return False
         else:
-            print("Failed to retrieve the webpage. Status code:", response.status_code)
+            logging.error("Failed to retrieve the webpage. Status code:", response.status_code)
+            return False
 
 
 def gather_stage_evergabe(harvest_job):

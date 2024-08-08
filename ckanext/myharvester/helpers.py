@@ -79,8 +79,9 @@ def process_multiple_tenders_giving_publisher(tenders, harvest_job, download_fun
     download_dir = ensure_directory_exists(os.path.join("/storage","public"))
     publisher_path = ensure_directory_exists(os.path.join(download_dir, publisher_name))
     harvest_object_ids = []
-
-    for tender in tenders:
+    total_tenders = len(tenders)
+    for index, tender in enumerate(tenders, start=1):
+        logging.info(f"Processing {tender_id} ({index}/{total_tenders})")
         tender_id = tender["tender_id"]
         contract_name = tender["title"]
         doc = tender["document"]
@@ -96,9 +97,11 @@ def process_multiple_tenders_giving_publisher(tenders, harvest_job, download_fun
 
         if not os.listdir(tender_download_path):
             shutil.rmtree(tender_download_path)
+            logging.info("No Files for " + tender + " deleting folder and skipping...")
             continue
 
         if not download_result:
+            logging.info("No more Files for " + tender + " adding offline tag and skipping...")
             add_offline_tag(tender_id.lower())
             continue
 
@@ -108,7 +111,7 @@ def process_multiple_tenders_giving_publisher(tenders, harvest_job, download_fun
             with open(meta_json_path, 'w', encoding='utf-8') as file:
                 json.dump(doc, file, ensure_ascii=False, indent=4)
         except Exception as e:
-            print(f"Error saving document {tender_id} to meta.json: {e}")
+            logging.error(f"Error saving document {tender_id} to meta.json: {e}")
         files = os.listdir(tender_download_path)
         for file in files:
             file_path = os.path.join(tender_download_path,file)
@@ -139,7 +142,7 @@ def wait_until_download_finishes(download_dir):
 
 def has_offline_tag(dataset_id):
     ckan_url = 'https://procurdat.azurewebsites.net'
-    api_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJPeTRGOVJzcEJtcDNyM1RKd3lKcEJwNHRiZUtucGNxOXZ6UDBZMmtOUW5FIiwiaWF0IjoxNzIzMTUzMjA4fQ.HUFrBjVSgxpMKrtiVVIvaWRmwgvhL5Km6tMFugARIRI'
+    api_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiItdTl5NEJmNklNWHl1RHQ5M1Z5dFdaOURWS19LMGoxSmQ3aGJmUlUyT0pRIiwiaWF0IjoxNzIzMTYwNTAwfQ.pvJ0AV29WKHSaOCjW1uF3Ga-4sucHhS6sov0p2lOTzA'
 
     package_show_url = f'{ckan_url}/api/3/action/package_show'
     payload = {'id': dataset_id}
@@ -167,7 +170,7 @@ def has_offline_tag(dataset_id):
 
 def add_offline_tag(dataset_id):
     ckan_url = 'https://procurdat.azurewebsites.net'
-    api_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJPeTRGOVJzcEJtcDNyM1RKd3lKcEJwNHRiZUtucGNxOXZ6UDBZMmtOUW5FIiwiaWF0IjoxNzIzMTUzMjA4fQ.HUFrBjVSgxpMKrtiVVIvaWRmwgvhL5Km6tMFugARIRI'
+    api_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiItdTl5NEJmNklNWHl1RHQ5M1Z5dFdaOURWS19LMGoxSmQ3aGJmUlUyT0pRIiwiaWF0IjoxNzIzMTYwNTAwfQ.pvJ0AV29WKHSaOCjW1uF3Ga-4sucHhS6sov0p2lOTzA'
 
     package_show_url = f'{ckan_url}/api/3/action/package_show'
     package_patch_url = f'{ckan_url}/api/3/action/package_patch'

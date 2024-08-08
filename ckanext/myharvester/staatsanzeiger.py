@@ -28,6 +28,7 @@ def download_tender_files_staatsanzeiger(url, download_dir):
 
     file_path = None
     try:
+        logging.info("Scrapping website for " + url)
         driver.get(url)
         submit_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.XPATH, "//input[@class='button' and @type='submit' and @value='Anonym als Zip']"))
@@ -40,9 +41,10 @@ def download_tender_files_staatsanzeiger(url, download_dir):
         wait_until_download_finishes(download_dir)
         file_path = give_latest_file(download_dir)
         unzip_file(file_path, download_dir)
+        logging.info("Files downloaded for " + url)
         return True
     except TimeoutException:
-        print("Nothing to download")
+        logging.info("Nothing to download for " + url + " skipping...")
         return False
     finally:
         driver.quit()
