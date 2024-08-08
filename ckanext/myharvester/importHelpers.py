@@ -13,7 +13,7 @@ def import_stage_giving_publisher(harvest_object, publisher):
         resource_create_url = f'{base_api_url}/resource_create'
         package_show_url = f'{base_api_url}/package_show'
         package_create_url = f'{base_api_url}/package_create'
-        api_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJDMjJ0cFdTMUFucXEwTWZhS3Y1dzZTZTRVRHk5a3pISE02aEZfQjZNMUM4IiwiaWF0IjoxNzIyOTAwMTc4fQ.xzcxtdl-YwfKOAMgICWUaaXQYL3BMa3JWrWyduza8kQ'
+        api_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJPeTRGOVJzcEJtcDNyM1RKd3lKcEJwNHRiZUtucGNxOXZ6UDBZMmtOUW5FIiwiaWF0IjoxNzIzMTUzMjA4fQ.HUFrBjVSgxpMKrtiVVIvaWRmwgvhL5Km6tMFugARIRI'
         owner_org = publisher
 
         content = json.loads(harvest_object.content)

@@ -139,7 +139,7 @@ def wait_until_download_finishes(download_dir):
 
 def has_offline_tag(dataset_id):
     ckan_url = 'https://procurdat.azurewebsites.net'
-    api_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJDMjJ0cFdTMUFucXEwTWZhS3Y1dzZTZTRVRHk5a3pISE02aEZfQjZNMUM4IiwiaWF0IjoxNzIyOTAwMTc4fQ.xzcxtdl-YwfKOAMgICWUaaXQYL3BMa3JWrWyduza8kQ'
+    api_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJPeTRGOVJzcEJtcDNyM1RKd3lKcEJwNHRiZUtucGNxOXZ6UDBZMmtOUW5FIiwiaWF0IjoxNzIzMTUzMjA4fQ.HUFrBjVSgxpMKrtiVVIvaWRmwgvhL5Km6tMFugARIRI'
 
     package_show_url = f'{ckan_url}/api/3/action/package_show'
     payload = {'id': dataset_id}
@@ -167,7 +167,7 @@ def has_offline_tag(dataset_id):
 
 def add_offline_tag(dataset_id):
     ckan_url = 'https://procurdat.azurewebsites.net'
-    api_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJDMjJ0cFdTMUFucXEwTWZhS3Y1dzZTZTRVRHk5a3pISE02aEZfQjZNMUM4IiwiaWF0IjoxNzIyOTAwMTc4fQ.xzcxtdl-YwfKOAMgICWUaaXQYL3BMa3JWrWyduza8kQ'
+    api_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJPeTRGOVJzcEJtcDNyM1RKd3lKcEJwNHRiZUtucGNxOXZ6UDBZMmtOUW5FIiwiaWF0IjoxNzIzMTUzMjA4fQ.HUFrBjVSgxpMKrtiVVIvaWRmwgvhL5Km6tMFugARIRI'
 
     package_show_url = f'{ckan_url}/api/3/action/package_show'
     package_patch_url = f'{ckan_url}/api/3/action/package_patch'
