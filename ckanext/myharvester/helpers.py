@@ -128,7 +128,7 @@ def process_multiple_tenders_giving_publisher(tenders, harvest_job, download_fun
                     Session.add(obj)
                     Session.commit()
                 harvest_object_ids.append(obj.id)
-        return harvest_object_ids
+    return harvest_object_ids
 
 
 
