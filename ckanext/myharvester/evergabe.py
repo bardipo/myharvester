@@ -4,10 +4,13 @@ import requests
 from urllib.parse import unquote
 from .helpers import *
 from .databaseConnection import get_tender_ids_evergabe
-logging.basicConfig(level=logging.INFO)
+import logging
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 def fetch_download_urls_evergabe(tender_id,tender_download_path):
-        logging.info("Scrapping the website for " + tender_id)
+        logger.info("Scrapping the website for " + tender_id)
         url = f'https://www.evergabe.de/unterlagen/{tender_id}'
         response = requests.get(url)
         file_paths = []
@@ -15,7 +18,7 @@ def fetch_download_urls_evergabe(tender_id,tender_download_path):
             soup = BeautifulSoup(response.content, 'html.parser')
             links = soup.find_all('a', {'data-turbo': 'false', 'class': 'btn btn-primary'})
             if links == []:
-                logging.info("Nothing to download for" + tender_id)
+                logger.info("Nothing to download for" + tender_id)
                 return False
             final_links = []
             for link in links:
@@ -41,16 +44,16 @@ def fetch_download_urls_evergabe(tender_id,tender_download_path):
                 files = os.listdir(tender_download_path)
                 for file in files:
                      file_paths.append(os.path.join(tender_download_path,file))
-                logging.info("Files downloaded for" + tender_id)
+                logger.info("Files downloaded for" + tender_id)
                 return True
             except requests.HTTPError as e:
-                logging.error('HTTP error fetching %s: %s' % (url, str(e)))
+                logger.error('HTTP error fetching %s: %s' % (url, str(e)))
                 return False
             except requests.RequestException as e:
-                logging.error('Error fetching %s: %s' % (url, str(e)))
+                logger.error('Error fetching %s: %s' % (url, str(e)))
                 return False
         else:
-            logging.error(f"Failed to retrieve the webpage. Status code: {response.status_code}")
+            logger.error(f"Failed to retrieve the webpage. Status code: {response.status_code}")
             return False
 
 

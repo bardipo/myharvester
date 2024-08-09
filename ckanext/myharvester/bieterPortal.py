@@ -6,8 +6,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from .databaseConnection import get_tender_ids_bieter_portal_db
+import logging
  
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 def download_tender_files_bieter(tender_id, download_dir):
         chrome_options = Options()
@@ -30,7 +33,7 @@ def download_tender_files_bieter(tender_id, download_dir):
         file_path = None
         try:
             url = f'https://bieterportal.noncd.db.de/evergabe.bieter/eva/supplierportal/portal/subproject/{tender_id}/details'
-            logging.info("Scrapping the website for " + tender_id)
+            logger.info("Scrapping the website for " + tender_id)
             driver.get(url)
             wait = WebDriverWait(driver, 10)
             download_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[.//span[text()='Herunterladen']]")))
@@ -38,10 +41,10 @@ def download_tender_files_bieter(tender_id, download_dir):
             wait_until_download_finishes(download_dir)
             file_path = give_latest_file(download_dir)
             unzip_file(file_path,download_dir)
-            logging.info("Files downloaded for " + tender_id)
+            logger.info("Files downloaded for " + tender_id)
             return True
         except TimeoutException:
-              logging.error("Nothing to download for " + tender_id)
+              logger.error("Nothing to download for " + tender_id)
               return False
         finally:
             driver.quit()

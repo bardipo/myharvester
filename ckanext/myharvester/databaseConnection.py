@@ -1,10 +1,14 @@
 from datetime import datetime, timedelta, timezone
+import logging
 from pymongo import MongoClient
 import re
 
 # MongoDB connection setup
 
 six_months_ago = (datetime.now(timezone.utc) - timedelta(days=3*30))
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 def get_tender_ids_evergabe_online():
     connection_url = "mongodb://134.102.23.199:27017/?directConnection=true"
@@ -42,7 +46,7 @@ def get_tender_ids_evergabe_online():
         return unique_tender_data
     
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
         return []
 
 def get_tender_ids_evergabe():
@@ -88,7 +92,7 @@ def get_tender_ids_evergabe():
         return unique_tender_data
     
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
         return []
 
 def get_tender_ids_bieter_portal_db():
@@ -127,7 +131,7 @@ def get_tender_ids_bieter_portal_db():
         return unique_tender_data
     
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
         return []
 
 def get_tender_ids_vergabe_autobahn():
@@ -172,7 +176,7 @@ def get_tender_ids_vergabe_autobahn():
         return unique_tender_data
     
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
         return []
     
 
@@ -213,7 +217,7 @@ def get_tender_ids_vergabemarktplatz_brandenburg():
         return unique_tender_data
     
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
         return []
     
     
@@ -254,7 +258,7 @@ def get_tender_ids_dtvp():
         return unique_tender_data
     
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
         return []
     
 
@@ -295,7 +299,7 @@ def get_tender_ids_vergabe_niedersachsen():
         return unique_tender_data
     
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
         return []
 
 
@@ -342,7 +346,7 @@ def get_tender_ids_vergabe_bremen():
         return unique_tender_data
     
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
         return []
     
 
@@ -383,7 +387,7 @@ def get_tender_ids_meinauftrag():
         return unique_tender_data
     
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
         return [], set()
 
 
@@ -424,7 +428,7 @@ def get_tender_ids_aumass():
         return unique_tender_data
     
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
         return [], set()
     
 
@@ -466,7 +470,7 @@ def get_tender_ids_staatsanzeiger():
         return unique_tender_data
     
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
         return [], set()
 
 
@@ -513,7 +517,7 @@ def get_tender_ids_vergabe_vmstart():
         return unique_tender_data
     
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
         return []
     
 
@@ -554,7 +558,7 @@ def get_tender_ids_vergabe_nrw():
         return unique_tender_data
     
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
         return []
     
 
@@ -595,6 +599,6 @@ def get_tender_ids_vmp_rheinland():
         return unique_tender_data
     
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
         return []
     

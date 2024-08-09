@@ -6,7 +6,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import NoSuchElementException
 from .databaseConnection import get_tender_ids_dtvp
 
-logging.basicConfig(level=logging.INFO)
+import logging
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
     
 def download_tender_files_dtvp(tender_id, download_dir):
         chrome_options = Options()
@@ -29,7 +33,7 @@ def download_tender_files_dtvp(tender_id, download_dir):
         file_path = None
         try:
             url = f"https://www.dtvp.de/Satellite/public/company/project/{tender_id}/de/documents"
-            logging.info("Scrapping the website for " + tender_id)
+            logger.info("Scrapping the website for " + tender_id)
             driver.get(url)
             wait = WebDriverWait(driver,10)
             download_button = driver.find_element(By.XPATH, "//a[contains(@title, 'Alle Dokumente als ZIP-Datei herunterladen')]")
@@ -37,10 +41,10 @@ def download_tender_files_dtvp(tender_id, download_dir):
             wait_until_download_finishes(download_dir)
             file_path = give_latest_file(download_dir)
             unzip_file(file_path,download_dir)
-            logging.info("Files downloaded for " + tender_id) 
+            logger.info("Files downloaded for " + tender_id) 
             return True
         except NoSuchElementException:
-              logging.error("Nothing to download for " + tender_id)
+              logger.error("Nothing to download for " + tender_id)
               return False
         finally:
             driver.quit()

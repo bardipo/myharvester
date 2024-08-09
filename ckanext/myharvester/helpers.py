@@ -1,7 +1,6 @@
 from datetime import datetime, timezone
 from hashlib import sha1
 import json
-import logging
 import os
 import re
 import shutil
@@ -11,7 +10,11 @@ import requests
 from ckan.model import Session, Package
 from ckanext.harvest.model import HarvestJob, HarvestObject, HarvestGatherError, \
                                     HarvestObjectError
-logging.basicConfig(level=logging.INFO)
+import logging
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 def extract_password_from_filename(filename):
     match = re.search(r'Kennwort (\S+)\.zip', filename)
@@ -20,7 +23,7 @@ def extract_password_from_filename(filename):
     return None
 
 def unzip_file(file_path, extract_to,password=None):
-        logging.debug('Unzipping file: %s' % file_path)
+        logger.debug('Unzipping file: %s' % file_path)
         try:
             with zipfile.ZipFile(file_path, 'r') as zip_ref:
                 if password:
@@ -44,7 +47,7 @@ def unzip_file(file_path, extract_to,password=None):
                                 os.rename(file_path, new_path)
                             else:
                                 # If file already exists, handle conflict (e.g., rename or skip)
-                                logging.warning('File %s already exists in %s. Skipping.' % (file, extract_to))
+                                logger.warning('File %s already exists in %s. Skipping.' % (file, extract_to))
                                 os.remove(file_path)
 
             # Remove empty directories
@@ -54,7 +57,7 @@ def unzip_file(file_path, extract_to,password=None):
                     if not os.listdir(dir_path):
                         os.rmdir(dir_path)
         except zipfile.BadZipFile as e:
-            logging.error('BadZipFile error while unzipping: %s' % str(e))
+            logger.error('BadZipFile error while unzipping: %s' % str(e))
             corrupted_dir = '/storage/public/corruptedfiles'
             if not os.path.exists(corrupted_dir):
                 os.makedirs(corrupted_dir)
@@ -64,9 +67,9 @@ def unzip_file(file_path, extract_to,password=None):
             corrupted_path = os.path.join(corrupted_dir, os.path.basename(file_path))
             os.rename(file_path, corrupted_path)
         except FileNotFoundError as e:
-            logging.error('File not found during unzipping: %s' % str(e))
+            logger.error('File not found during unzipping: %s' % str(e))
         except OSError as e:
-            logging.error('Error while processing files during unzipping: %s' % str(e))
+            logger.error('Error while processing files during unzipping: %s' % str(e))
 
 
 def ensure_directory_exists(path):
@@ -84,7 +87,7 @@ def process_multiple_tenders_giving_publisher(tenders, harvest_job, download_fun
         tender_id = tender["tender_id"]
         contract_name = tender["title"]
         doc = tender["document"]
-        logging.info(f"Processing {tender_id} ({index}/{total_tenders})")
+        logger.info(f"Processing {tender_id} ({index}/{total_tenders})")
 
         if has_offline_tag(tender_id.lower()):
             continue
@@ -97,11 +100,11 @@ def process_multiple_tenders_giving_publisher(tenders, harvest_job, download_fun
 
         if not os.listdir(tender_download_path):
             shutil.rmtree(tender_download_path)
-            logging.info("No Files for " + tender_id + " deleting folder and skipping...")
+            logger.info("No Files for " + tender_id + " deleting folder and skipping...")
             continue
 
         if not download_result:
-            logging.info("No more Files for " + tender_id + " adding offline tag and skipping...")
+            logger.info("No more Files for " + tender_id + " adding offline tag and skipping...")
             add_offline_tag(tender_id.lower())
             continue
 
@@ -111,7 +114,7 @@ def process_multiple_tenders_giving_publisher(tenders, harvest_job, download_fun
             with open(meta_json_path, 'w', encoding='utf-8') as file:
                 json.dump(doc, file, ensure_ascii=False, indent=4)
         except Exception as e:
-            logging.error(f"Error saving document {tender_id} to meta.json: {e}")
+            logger.error(f"Error saving document {tender_id} to meta.json: {e}")
         files = os.listdir(tender_download_path)
         for file in files:
             file_path = os.path.join(tender_download_path,file)

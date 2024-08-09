@@ -6,7 +6,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from .databaseConnection import get_tender_ids_staatsanzeiger
-logging.basicConfig(level=logging.INFO)
+import logging
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 def download_tender_files_staatsanzeiger(url, download_dir):
     # Set up Chrome options
     chrome_options = Options()
@@ -28,7 +32,7 @@ def download_tender_files_staatsanzeiger(url, download_dir):
 
     file_path = None
     try:
-        logging.info("Scrapping website for " + url)
+        logger.info("Scrapping website for " + url)
         driver.get(url)
         submit_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.XPATH, "//input[@class='button' and @type='submit' and @value='Anonym als Zip']"))
@@ -41,10 +45,10 @@ def download_tender_files_staatsanzeiger(url, download_dir):
         wait_until_download_finishes(download_dir)
         file_path = give_latest_file(download_dir)
         unzip_file(file_path, download_dir)
-        logging.info("Files downloaded for " + url)
+        logger.info("Files downloaded for " + url)
         return True
     except TimeoutException:
-        logging.info("Nothing to download for " + url + " skipping...")
+        logger.info("Nothing to download for " + url + " skipping...")
         return False
     finally:
         driver.quit()

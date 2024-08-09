@@ -9,7 +9,11 @@ from selenium.common.exceptions import ElementClickInterceptedException, NoSuchE
 import time
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
-logging.basicConfig(level=logging.INFO)
+import logging
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 def fetch_download_urls_meinauftrag(url,tender_download_path):
 
@@ -25,7 +29,7 @@ def fetch_download_urls_meinauftrag(url,tender_download_path):
     driver = webdriver.Chrome(options=chrome_options)
 
     try:
-        logging.info("Scrapping website for the " + url)
+        logger.info("Scrapping website for the " + url)
         driver.get(url)
         wait = WebDriverWait(driver,10)
         try:
@@ -33,7 +37,7 @@ def fetch_download_urls_meinauftrag(url,tender_download_path):
             cookie_button.click()
             time.sleep(2)
         except NoSuchElementException:
-            logging.info("No Cookie" + url)
+            logger.info("No Cookie" + url)
         try:
             toggle_button = driver.find_element(By.ID, "toggleAllFolder")
             toggle_button.click()
@@ -42,14 +46,14 @@ def fetch_download_urls_meinauftrag(url,tender_download_path):
             time.sleep(5)
             toggle_button.click()
         except NoSuchElementException:
-            logging.info("Nothing to download for " + url + " skipping...")
+            logger.info("Nothing to download for " + url + " skipping...")
             return False
         time.sleep(5)
         try:
             download_buttons = driver.find_elements(By.XPATH, "//tbody//button[@class='btn btn-primary btn-sm']")
             download_links = []
         except NoSuchElementException:
-            logging.info("Nothing to download for " + url + " skipping...")
+            logger.info("Nothing to download for " + url + " skipping...")
             return False
         for button in download_buttons:
             onclick_attr = button.get_attribute("onclick")
@@ -75,9 +79,9 @@ def fetch_download_urls_meinauftrag(url,tender_download_path):
                         unzip_file(file_path, tender_download_path, password)
             return True
         except requests.HTTPError as e:
-            logging.error('HTTP error fetching %s: %s' % (url, str(e)))
+            logger.error('HTTP error fetching %s: %s' % (url, str(e)))
         except requests.RequestException as e:
-            logging.error('Error fetching %s: %s' % (url, str(e)))
+            logger.error('Error fetching %s: %s' % (url, str(e)))
     finally:
         driver.quit()
 

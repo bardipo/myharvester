@@ -7,8 +7,11 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import NoSuchElementException
 from .databaseConnection import get_tender_ids_aumass
+import logging
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
  
 def download_tender_files_aumass(url, download_dir):
     # Set up Chrome options
@@ -31,7 +34,7 @@ def download_tender_files_aumass(url, download_dir):
 
     file_path = None
     try:
-        logging.info("Scrapping the website for " + url)
+        logger.info("Scrapping the website for " + url)
         driver.get(url)
         try:
             cookies_accept_button = WebDriverWait(driver, 10).until(
@@ -39,7 +42,7 @@ def download_tender_files_aumass(url, download_dir):
             )
             cookies_accept_button.click()
         except TimeoutException:
-            logging.info("No Cookies")
+            logger.info("No Cookies")
         
         wait = WebDriverWait(driver, 10)
         download_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//a[contains(@class, 'btn-download') and contains(text(), 'DOWNLOAD')]")))
@@ -56,19 +59,19 @@ def download_tender_files_aumass(url, download_dir):
             ohne_registrierung_button.click()
 
         except TimeoutException:
-            logging.info("No Modal Check for " + url)
+            logger.info("No Modal Check for " + url)
 
         wait_until_download_finishes(download_dir)
         file_path = give_latest_file(download_dir)
         unzip_file(file_path, download_dir)
-        logging.info("Downloaded files for " + url)
+        logger.info("Downloaded files for " + url)
         return True
 
     except NoSuchElementException:
-        logging.error("Nothing to download for " + url)
+        logger.error("Nothing to download for " + url)
         return False
     except Exception as e:
-        logging.error(str(e))
+        logger.error(str(e))
         return False
     finally:
         driver.quit()
