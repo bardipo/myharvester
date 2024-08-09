@@ -81,10 +81,10 @@ def process_multiple_tenders_giving_publisher(tenders, harvest_job, download_fun
     harvest_object_ids = []
     total_tenders = len(tenders)
     for index, tender in enumerate(tenders, start=1):
-        logging.info(f"Processing {tender_id} ({index}/{total_tenders})")
         tender_id = tender["tender_id"]
         contract_name = tender["title"]
         doc = tender["document"]
+        logging.info(f"Processing {tender_id} ({index}/{total_tenders})")
 
         if has_offline_tag(tender_id.lower()):
             continue
