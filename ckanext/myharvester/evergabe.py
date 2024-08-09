@@ -50,7 +50,7 @@ def fetch_download_urls_evergabe(tender_id,tender_download_path):
                 logging.error('Error fetching %s: %s' % (url, str(e)))
                 return False
         else:
-            logging.error("Failed to retrieve the webpage. Status code:", response.status_code)
+            logging.error(f"Failed to retrieve the webpage. Status code: {response.status_code}")
             return False
 
 

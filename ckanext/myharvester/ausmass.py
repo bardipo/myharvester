@@ -66,7 +66,7 @@ def download_tender_files_aumass(url, download_dir):
         logging.error("Nothing to download for " + url)
         return False
     except Exception as e:
-        logging.error(e)
+        logging.error(str(e))
         return False
     finally:
         driver.quit()

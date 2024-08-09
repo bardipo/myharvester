@@ -97,11 +97,11 @@ def process_multiple_tenders_giving_publisher(tenders, harvest_job, download_fun
 
         if not os.listdir(tender_download_path):
             shutil.rmtree(tender_download_path)
-            logging.info("No Files for " + tender + " deleting folder and skipping...")
+            logging.info("No Files for " + tender_id + " deleting folder and skipping...")
             continue
 
         if not download_result:
-            logging.info("No more Files for " + tender + " adding offline tag and skipping...")
+            logging.info("No more Files for " + tender_id + " adding offline tag and skipping...")
             add_offline_tag(tender_id.lower())
             continue
 
