@@ -70,7 +70,7 @@ def unzip_file(file_path, extract_to,password=None):
             logger.error('File not found during unzipping: %s' % str(e))
         except OSError as e:
             logger.error('Error while processing files during unzipping: %s' % str(e))
-        except RuntimeError:
+        except RuntimeError as e:
             logger.error('Error while processing files during unzipping: %s' % str(e))
             logger.info('Skipping file due to RuntimeError: %s' % file_path)
         
