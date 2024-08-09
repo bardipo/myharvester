@@ -7,6 +7,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from .databaseConnection import get_tender_ids_bieter_portal_db
  
+logging.basicConfig(level=logging.INFO)
+
 def download_tender_files_bieter(tender_id, download_dir):
         chrome_options = Options()
         chrome_options.add_argument("--headless")

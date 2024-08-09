@@ -6,7 +6,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import NoSuchElementException
 from .databaseConnection import get_tender_ids_vergabemarktplatz_brandenburg
 
-    
+logging.basicConfig(level=logging.INFO)    
 def download_tender_files_vergabe_brandenburg(tender_id, download_dir):
         chrome_options = Options()
         chrome_options.add_argument("--headless")

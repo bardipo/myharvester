@@ -6,7 +6,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from .databaseConnection import get_tender_ids_vergabe_bremen
- 
+logging.basicConfig(level=logging.INFO) 
 def download_tender_files_vergabe_bremen(url, download_dir):
     # Set up Chrome options
     chrome_options = Options()

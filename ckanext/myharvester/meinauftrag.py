@@ -9,7 +9,7 @@ from selenium.common.exceptions import ElementClickInterceptedException, NoSuchE
 import time
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
-
+logging.basicConfig(level=logging.INFO)
 
 def fetch_download_urls_meinauftrag(url,tender_download_path):
 

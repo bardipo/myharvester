@@ -4,7 +4,7 @@ import requests
 from urllib.parse import unquote
 from .helpers import *
 from .databaseConnection import get_tender_ids_evergabe
-
+logging.basicConfig(level=logging.INFO)
 
 def fetch_download_urls_evergabe(tender_id,tender_download_path):
         logging.info("Scrapping the website for " + tender_id)

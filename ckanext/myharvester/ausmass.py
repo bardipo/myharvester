@@ -7,6 +7,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import NoSuchElementException
 from .databaseConnection import get_tender_ids_aumass
+
+logging.basicConfig(level=logging.INFO)
  
 def download_tender_files_aumass(url, download_dir):
     # Set up Chrome options

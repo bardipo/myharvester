@@ -11,7 +11,7 @@ import requests
 from ckan.model import Session, Package
 from ckanext.harvest.model import HarvestJob, HarvestObject, HarvestGatherError, \
                                     HarvestObjectError
-
+logging.basicConfig(level=logging.INFO)
 
 def extract_password_from_filename(filename):
     match = re.search(r'Kennwort (\S+)\.zip', filename)

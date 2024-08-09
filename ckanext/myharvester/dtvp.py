@@ -6,6 +6,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import NoSuchElementException
 from .databaseConnection import get_tender_ids_dtvp
 
+logging.basicConfig(level=logging.INFO)
     
 def download_tender_files_dtvp(tender_id, download_dir):
         chrome_options = Options()
