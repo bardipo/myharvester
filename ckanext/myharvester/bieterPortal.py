@@ -49,7 +49,10 @@ def download_tender_files_bieter(tender_id, download_dir):
         finally:
             driver.quit()
     
-def gather_stage_bieter(harvest_job):
+def gather_stage_bieter(harvest_job,justImport = False):
         tender_ids = get_tender_ids_bieter_portal_db()
-        return process_multiple_tenders_giving_publisher(tender_ids,harvest_job,download_tender_files_bieter,"bieter_portal")
+        if justImport:
+            return process_multiple_tenders_without_download(tender_ids,harvest_job,"bieter_portal")
+        else: 
+            return process_multiple_tenders_giving_publisher(tender_ids,harvest_job,download_tender_files_bieter,"bieter_portal")
 

@@ -134,6 +134,37 @@ def process_multiple_tenders_giving_publisher(tenders, harvest_job, download_fun
                 harvest_object_ids.append(obj.id)
     return harvest_object_ids
 
+def process_multiple_tenders_without_download(tenders, harvest_job, publisher_name):
+    download_dir = "/storage/public"
+    publisher_path = os.path.join(download_dir, publisher_name)
+    harvest_object_ids = []
+    
+    for tender in tenders:
+        tender_id = tender["tender_id"]
+        contract_name = tender["title"]
+        logger.info(f"Processing tender ID: {tender_id}")
+        
+        tender_download_path = os.path.join(publisher_path, tender_id)
+        if not os.path.exists(tender_download_path):
+            logger.info(f"No folder found for tender ID: {tender_id}. Skipping.")
+            continue
+        
+        files = os.listdir(tender_download_path)
+        for file in files:
+            file_path = os.path.join(tender_download_path, file)
+            if os.path.isfile(file_path):
+                file_hash = sha1(os.path.basename(file_path).encode('utf-8')).hexdigest()
+                guid = f"{tender_id}-{file_hash}"
+                obj = Session.query(HarvestObject).filter_by(guid=guid).first()
+                if not obj:
+                    content = json.dumps({'file_path': file_path, 'contract_name': contract_name})
+                    obj = HarvestObject(guid=guid, job=harvest_job, content=content)
+                    Session.add(obj)
+                    Session.commit()
+                harvest_object_ids.append(obj.id)
+    
+    return harvest_object_ids
+
 
 
 def wait_until_download_finishes(download_dir):

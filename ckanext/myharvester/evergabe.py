@@ -57,6 +57,9 @@ def fetch_download_urls_evergabe(tender_id,tender_download_path):
             return False
 
 
-def gather_stage_evergabe(harvest_job):
+def gather_stage_evergabe(harvest_job,justImpport = False):
         tenders = get_tender_ids_evergabe()
-        return process_multiple_tenders_giving_publisher(tenders,harvest_job,fetch_download_urls_evergabe,"evergabe")
+        if justImpport:
+             return process_multiple_tenders_without_download(tenders,harvest_job,"evergabe")
+        else:
+             return process_multiple_tenders_giving_publisher(tenders,harvest_job,fetch_download_urls_evergabe,"evergabe")

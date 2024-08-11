@@ -76,7 +76,10 @@ def download_tender_files_aumass(url, download_dir):
     finally:
         driver.quit()
     
-def gather_stage_aumass(harvest_job):
+def gather_stage_aumass(harvest_job,justImport = False):
         tender_ids = get_tender_ids_aumass()
-        return process_multiple_tenders_giving_publisher(tender_ids,harvest_job,download_tender_files_aumass,"aumass")
+        if justImport:
+            return process_multiple_tenders_without_download(tender_ids,harvest_job,"aumass")
+        else:
+            return process_multiple_tenders_giving_publisher(tender_ids,harvest_job,download_tender_files_aumass,"aumass")
 

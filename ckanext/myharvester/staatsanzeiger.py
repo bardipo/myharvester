@@ -53,7 +53,10 @@ def download_tender_files_staatsanzeiger(url, download_dir):
     finally:
         driver.quit()
     
-def gather_stage_staatsanzeiger(harvest_job):
+def gather_stage_staatsanzeiger(harvest_job,justImport = False):
         tender_ids = get_tender_ids_staatsanzeiger()
-        return process_multiple_tenders_giving_publisher(tender_ids,harvest_job,download_tender_files_staatsanzeiger,"staatsanzeiger")
+        if justImport:
+            return process_multiple_tenders_without_download(tender_ids,harvest_job,"staatsanzeiger")
+        else:
+            return process_multiple_tenders_giving_publisher(tender_ids,harvest_job,download_tender_files_staatsanzeiger,"staatsanzeiger")
 

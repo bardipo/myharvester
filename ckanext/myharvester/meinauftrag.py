@@ -86,6 +86,9 @@ def fetch_download_urls_meinauftrag(url,tender_download_path):
         driver.quit()
 
 
-def gather_stage_meinauftrag(harvest_job):
+def gather_stage_meinauftrag(harvest_job,justImport = False):
         tenders = get_tender_ids_meinauftrag()
-        return process_multiple_tenders_giving_publisher(tenders,harvest_job,fetch_download_urls_meinauftrag,"meinauftrag")
+        if justImport:
+            return process_multiple_tenders_without_download(tenders,harvest_job,"meinauftrag")
+        else:
+            return process_multiple_tenders_giving_publisher(tenders,harvest_job,fetch_download_urls_meinauftrag,"meinauftrag")

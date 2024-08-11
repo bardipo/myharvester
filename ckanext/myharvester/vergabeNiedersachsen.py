@@ -49,6 +49,9 @@ def download_tender_files_vergabe_niedersachsen(tender_id, download_dir):
         finally:
             driver.quit()
     
-def gather_stage_vergabe_niedersachsen(harvest_job):
+def gather_stage_vergabe_niedersachsen(harvest_job,justImport = False):
         tender_ids = get_tender_ids_vergabe_niedersachsen()
-        return process_multiple_tenders_giving_publisher(tender_ids,harvest_job,download_tender_files_vergabe_niedersachsen,"vergabe_niedersachsen")
+        if justImport:
+            return process_multiple_tenders_without_download(tender_ids,harvest_job,"vergabe_niedersachsen")
+        else:
+            return process_multiple_tenders_giving_publisher(tender_ids,harvest_job,download_tender_files_vergabe_niedersachsen,"vergabe_niedersachsen")

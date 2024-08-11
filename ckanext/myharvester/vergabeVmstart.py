@@ -59,7 +59,10 @@ def download_tender_files_vergabe_vmstart(url, download_dir):
     finally:
         driver.quit()
     
-def gather_stage_vergabe_vmstart(harvest_job):
+def gather_stage_vergabe_vmstart(harvest_job,justImport = False):
         tender_ids = get_tender_ids_vergabe_vmstart()
-        return process_multiple_tenders_giving_publisher(tender_ids,harvest_job,download_tender_files_vergabe_vmstart,"vergabe_vmstart")
+        if justImport:
+            return process_multiple_tenders_without_download(tender_ids,harvest_job,"vergabe_vmstart")
+        else:
+            return process_multiple_tenders_giving_publisher(tender_ids,harvest_job,download_tender_files_vergabe_vmstart,"vergabe_vmstart")
 

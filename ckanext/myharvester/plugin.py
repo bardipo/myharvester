@@ -51,33 +51,75 @@ class MyharvesterPlugin(HarvesterBase):
         self.log.debug('Gather stage for: %s' % harvest_job.source.url)
         
         if "vergabe.autobahn.de" in harvest_job.source.url:
-            return gather_stage_vergabe_autobahn(harvest_job)
+            if "IMPORT" in harvest_job.source.url:
+                return gather_stage_vergabe_autobahn(harvest_job,True)
+            else:
+                return gather_stage_vergabe_autobahn(harvest_job)
         elif "https://bieterportal.noncd.db.de/" in harvest_job.source.url:
-            return gather_stage_bieter(harvest_job)
+            if "IMPORT" in harvest_job.source.url:
+                return gather_stage_bieter(harvest_job,True)
+            else:
+                return gather_stage_bieter(harvest_job)
         elif "https://www.evergabe.de/" in harvest_job.source.url:
-            return gather_stage_evergabe(harvest_job)
+            if "IMPORT" in harvest_job.source.url:
+                return gather_stage_evergabe(harvest_job,True)
+            else:
+                return gather_stage_evergabe(harvest_job)
         elif "https://www.evergabe-online.de/" in harvest_job.source.url:
-            return gather_stage_evergabeOnline(harvest_job)
+            if "IMPORT" in harvest_job.source.url:
+                return gather_stage_evergabeOnline(harvest_job,True)
+            else:
+                return gather_stage_evergabeOnline(harvest_job)
         elif "https://vergabemarktplatz.brandenburg.de/" in harvest_job.source.url:
-            return gather_stage_vergabeBrandenburg(harvest_job)
+            if "IMPORT" in harvest_job.source.url:
+                return gather_stage_vergabeBrandenburg(harvest_job,True)
+            else:
+                return gather_stage_vergabeBrandenburg(harvest_job)
         elif "https://www.dtvp.de/" in harvest_job.source.url:
-            return gather_stage_dtvp(harvest_job)
+            if "IMPORT" in harvest_job.source.url:
+                return gather_stage_dtvp(harvest_job,True)
+            else:
+                return gather_stage_dtvp(harvest_job)
         elif "https://vergabe.niedersachsen.de/" in harvest_job.source.url:
-            return gather_stage_vergabe_niedersachsen(harvest_job)
+            if "IMPORT" in harvest_job.source.url:
+                return gather_stage_vergabe_niedersachsen(harvest_job,True)
+            else:
+                return gather_stage_vergabe_niedersachsen(harvest_job)
         elif "https://vergabe.bremen.de/" in harvest_job.source.url:
-            return gather_stage_vergabe_bremen(harvest_job)
+            if "IMPORT" in harvest_job.source.url:
+                return gather_stage_vergabe_bremen(harvest_job,True)
+            else:
+                return gather_stage_vergabe_bremen(harvest_job)
         elif "https://www.meinauftrag.rib.de/" in harvest_job.source.url:
-            return gather_stage_meinauftrag(harvest_job)
+            if "IMPORT" in harvest_job.source.url:
+                return gather_stage_meinauftrag(harvest_job,True)
+            else:
+                return gather_stage_meinauftrag(harvest_job)
         elif "https://plattform.aumass.de/" in harvest_job.source.url:
-            return gather_stage_aumass(harvest_job)
+            if "IMPORT" in harvest_job.source.url:
+                return gather_stage_aumass(harvest_job,True)
+            else:
+                return gather_stage_aumass(harvest_job)
         elif "https://www.staatsanzeiger-eservices.de/" in harvest_job.source.url:
-            return gather_stage_staatsanzeiger(harvest_job)
+            if "IMPORT" in harvest_job.source.url:
+                return gather_stage_staatsanzeiger(harvest_job,True)
+            else:
+                return gather_stage_staatsanzeiger(harvest_job)
         elif "https://vergabe.vmstart.de/" in harvest_job.source.url:
-            return gather_stage_vergabe_vmstart(harvest_job)
+            if "IMPORT" in harvest_job.source.url:
+                return gather_stage_vergabe_vmstart(harvest_job,True)
+            else:
+                return gather_stage_vergabe_vmstart(harvest_job)
         elif "https://www.evergabe.nrw.de/" in harvest_job.source.url:
-            return gather_stage_vergabe_nrw(harvest_job)
+            if "IMPORT" in harvest_job.source.url:
+                return gather_stage_vergabe_nrw(harvest_job,True)
+            else:
+                return gather_stage_vergabe_nrw(harvest_job)
         elif "https://www.vmp-rheinland.de/" in harvest_job.source.url:
-            return gather_stage_vmp_rheinland(harvest_job)
+            if "IMPORT" in harvest_job.source.url:
+                return gather_stage_vmp_rheinland(harvest_job,True)
+            else:
+                return gather_stage_vmp_rheinland(harvest_job)
 
         raise HarvestGatherError()
 
