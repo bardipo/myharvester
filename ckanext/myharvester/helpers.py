@@ -119,19 +119,24 @@ def process_multiple_tenders_giving_publisher(tenders, harvest_job, download_fun
                 json.dump(doc, file, ensure_ascii=False, indent=4)
         except Exception as e:
             logger.error(f"Error saving document {tender_id} to meta.json: {e}")
-        files = os.listdir(tender_download_path)
-        for file in files:
-            file_path = os.path.join(tender_download_path,file)
+        resources = []
+        for file in os.listdir(tender_download_path):
+            file_path = os.path.join(tender_download_path, file)
             if os.path.isfile(file_path):
-                file_hash = sha1(os.path.basename(file_path).encode('utf-8')).hexdigest()
-                guid = f"{tender_id}-{file_hash}"
-                obj = Session.query(HarvestObject).filter_by(guid=guid).first()
-                if not obj:
-                    content = json.dumps({'file_path': file_path, 'contract_name': contract_name})
-                    obj = HarvestObject(guid=guid, job=harvest_job, content=content)
-                    Session.add(obj)
-                    Session.commit()
-                harvest_object_ids.append(obj.id)
+                resources.append({'url': file_path, 'name': file})
+        
+        guid = sha1(f"{publisher_name}-{tender_id}".encode('utf-8')).hexdigest()
+        obj = Session.query(HarvestObject).filter_by(guid=guid).first()
+        
+        if not obj:
+            content = json.dumps({'resources': resources, 'contract_name': contract_name, 'tender_id': tender_id})
+            obj = HarvestObject(guid=guid, job=harvest_job, content=content)
+            Session.add(obj)
+        else:
+            obj.content = json.dumps({'resources': resources, 'contract_name': contract_name, 'tender_id': tender_id})
+            obj.job = harvest_job
+        Session.commit()
+        harvest_object_ids.append(obj.id)
     return harvest_object_ids
 
 def process_multiple_tenders_without_download(tenders, harvest_job, publisher_name):
@@ -149,19 +154,24 @@ def process_multiple_tenders_without_download(tenders, harvest_job, publisher_na
             logger.info(f"No folder found for tender ID: {tender_id}. Skipping.")
             continue
         
-        files = os.listdir(tender_download_path)
-        for file in files:
+        resources = []
+        for file in os.listdir(tender_download_path):
             file_path = os.path.join(tender_download_path, file)
             if os.path.isfile(file_path):
-                file_hash = sha1(os.path.basename(file_path).encode('utf-8')).hexdigest()
-                guid = f"{tender_id}-{file_hash}"
-                obj = Session.query(HarvestObject).filter_by(guid=guid).first()
-                if not obj:
-                    content = json.dumps({'file_path': file_path, 'contract_name': contract_name})
-                    obj = HarvestObject(guid=guid, job=harvest_job, content=content)
-                    Session.add(obj)
-                    Session.commit()
-                harvest_object_ids.append(obj.id)
+                resources.append({'url': file_path, 'name': file})
+        
+        guid = sha1(f"{publisher_name}-{tender_id}".encode('utf-8')).hexdigest()
+        obj = Session.query(HarvestObject).filter_by(guid=guid).first()
+        
+        if not obj:
+            content = json.dumps({'resources': resources, 'contract_name': contract_name, 'tender_id': tender_id})
+            obj = HarvestObject(guid=guid, job=harvest_job, content=content)
+            Session.add(obj)
+        else:
+            obj.content = json.dumps({'resources': resources, 'contract_name': contract_name, 'tender_id': tender_id})
+            obj.job = harvest_job
+        Session.commit()
+        harvest_object_ids.append(obj.id)
     
     return harvest_object_ids
 

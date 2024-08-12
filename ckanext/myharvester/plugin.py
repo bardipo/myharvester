@@ -132,6 +132,102 @@ class MyharvesterPlugin(HarvesterBase):
         self.log.debug('Harvesting object: %s' % harvest_object)
 
         base_context = {'model': model, 'session': model.Session, 'user': self._get_user_name()}
-        source_dataset = get_action('package_show')(base_context.copy(), {'id': harvest_object.job.source.id})
-        local_org = source_dataset.get('owner_org')
-        return import_stage_giving_publisher(harvest_object,local_org)
+
+        if not harvest_object:
+            self.log.error('No harvest object received')
+            return False
+
+        if harvest_object.content is None:
+            self._save_object_error('Empty content for object %s' % harvest_object.id, harvest_object, 'Import')
+            return False
+
+        try:
+            package_dict = json.loads(harvest_object.content)
+            tender_id = package_dict.get('tender_id')
+            contract_name = package_dict.get('contract_name')
+            resources = package_dict.get('resources', [])
+
+            if not resources:
+                self._save_object_error('No resources found for object %s' % harvest_object.id, harvest_object, 'Import')
+                return False
+
+            package_dict = {
+                'id': tender_id,
+                'name': tender_id,
+                'title': contract_name,
+            }
+
+            source_dataset = get_action('package_show')(base_context.copy(), {'id': harvest_object.job.source.id})
+            local_org = source_dataset.get('owner_org')
+            package_dict['owner_org'] = local_org
+
+            result = self._create_or_update_package(package_dict, harvest_object, package_dict_form='package_show')
+
+            ckan_resources = []
+            for resource in resources:
+                file_path = resource.get('url')
+                if os.path.isfile(file_path):
+                    resource_id = self.upload_file_to_ckan(file_path, tender_id)
+                    if resource_id:
+                        ckan_resources.append({
+                            'id': resource_id,
+                            'name': os.path.basename(file_path),
+                            'url': f'/dataset/{tender_id}/resource/{resource_id}/download/{os.path.basename(file_path)}'
+                        })
+
+            package_dict = {
+                'id': tender_id,
+                'name': tender_id,
+                'title': contract_name,
+                'resources': ckan_resources,
+                'owner_org' : local_org,
+            }
+
+            result = self._create_or_update_package(package_dict, harvest_object, package_dict_form='package_show')
+            return result
+
+        except ValidationError as e:
+            self._save_object_error('Invalid package with GUID %s: %r' % (harvest_object.guid, e.error_dict), harvest_object, 'Import')
+        except Exception as e:
+            self._save_object_error('%s' % e, harvest_object, 'Import')
+
+        return False
+    
+
+    def upload_file_to_ckan(self, file_path, dataset_id, retries=3, backoff_factor=2):
+        url = "https://procurdat.azurewebsites.net/api/3/action/resource_create"
+        headers = {
+            'Authorization': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiItdTl5NEJmNklNWHl1RHQ5M1Z5dFdaOURWS19LMGoxSmQ3aGJmUlUyT0pRIiwiaWF0IjoxNzIzMTYwNTAwfQ.pvJ0AV29WKHSaOCjW1uF3Ga-4sucHhS6sov0p2lOTzA'
+        }
+
+        for attempt in range(retries):
+            try:
+                with open(file_path, 'rb') as file_data:
+                    response = requests.post(
+                        url,
+                        data={
+                            'package_id': dataset_id,
+                            'name': os.path.basename(file_path),
+                            'url_type': 'upload',
+                        },
+                        headers=headers,
+                        files={'upload': file_data}
+                    )
+                    
+                if response.status_code == 200:
+                    return response.json()['result']['id']
+                else:
+                    self.log.error(f"Failed to upload file {file_path} on attempt {attempt + 1}: {response.text}")
+            
+            except Exception as e:
+                self.log.error(f"Error uploading file {file_path} on attempt {attempt + 1}: {str(e)}")
+            
+            time.sleep(backoff_factor ** attempt)
+
+        self.log.error(f"Failed to upload file {file_path} after {retries} attempts")
+        logs_dir = '/storage/public/importlogs'
+        if not os.path.exists(logs_dir):
+            os.makedirs(logs_dir)
+        with open(os.path.join(logs_dir, 'logs.txt'), 'a') as log_file:
+            log_file.write('All retry attempts to upload file %s to package %s failed.' % (file_path, dataset_id))
+        return None
