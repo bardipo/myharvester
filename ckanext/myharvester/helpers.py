@@ -129,11 +129,11 @@ def process_multiple_tenders_giving_publisher(tenders, harvest_job, download_fun
         obj = Session.query(HarvestObject).filter_by(guid=guid).first()
         
         if not obj:
-            content = json.dumps({'resources': resources, 'contract_name': contract_name, 'tender_id': tender_id})
+            content = json.dumps({'resources': resources, 'contract_name': contract_name, 'tender_id': tender_id, 'publisher_name': publisher_name})
             obj = HarvestObject(guid=guid, job=harvest_job, content=content)
             Session.add(obj)
         else:
-            obj.content = json.dumps({'resources': resources, 'contract_name': contract_name, 'tender_id': tender_id})
+            obj.content = json.dumps({'resources': resources, 'contract_name': contract_name, 'tender_id': tender_id, 'publisher_name': publisher_name})
             obj.job = harvest_job
         Session.commit()
         harvest_object_ids.append(obj.id)
@@ -164,11 +164,11 @@ def process_multiple_tenders_without_download(tenders, harvest_job, publisher_na
         obj = Session.query(HarvestObject).filter_by(guid=guid).first()
         
         if not obj:
-            content = json.dumps({'resources': resources, 'contract_name': contract_name, 'tender_id': tender_id})
+            content = json.dumps({'resources': resources, 'contract_name': contract_name, 'tender_id': tender_id,'publisher_name': publisher_name})
             obj = HarvestObject(guid=guid, job=harvest_job, content=content)
             Session.add(obj)
         else:
-            obj.content = json.dumps({'resources': resources, 'contract_name': contract_name, 'tender_id': tender_id})
+            obj.content = json.dumps({'resources': resources, 'contract_name': contract_name, 'tender_id': tender_id,'publisher_name': publisher_name})
             obj.job = harvest_job
         Session.commit()
         harvest_object_ids.append(obj.id)
