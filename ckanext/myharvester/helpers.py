@@ -11,6 +11,7 @@ from ckan.model import Session, Package
 from ckanext.harvest.model import HarvestJob, HarvestObject, HarvestGatherError, \
                                     HarvestObjectError
 import logging
+from pathlib import Path
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -22,57 +23,59 @@ def extract_password_from_filename(filename):
         return match.group(1)
     return None
 
-def unzip_file(file_path, extract_to,password=None):
-        logger.debug('Unzipping file: %s' % file_path)
-        try:
-            with zipfile.ZipFile(file_path, 'r') as zip_ref:
-                if password:
-                  zip_ref.extractall(extract_to, pwd=password.encode())
-                else:  
-                  zip_ref.extractall(extract_to)
-            os.remove(file_path)
-            
-            # Recursively unzip any nested zip files and move files to extract_to
-            for root, dirs, files in os.walk(extract_to):
-                for file in files:
-                    file_path = os.path.join(root, file)
-                    if file.endswith('.zip'):
-                        password = extract_password_from_filename(file)
-                        unzip_file(file_path, extract_to, password)
-                    else:
-                        # Move file to extract_to directory if it's not already there
-                        if root != extract_to:
-                            new_path = os.path.join(extract_to, file)
-                            if not os.path.exists(new_path):
-                                os.rename(file_path, new_path)
-                            else:
-                                # If file already exists, handle conflict (e.g., rename or skip)
-                                logger.warning('File %s already exists in %s. Skipping.' % (file, extract_to))
-                                os.remove(file_path)
+def unzip_file(file_path, extract_to, password=None):
+    file_path = Path(file_path)
+    extract_to = Path(extract_to)
 
-            # Remove empty directories
-            for root, dirs, files in os.walk(extract_to, topdown=False):
-                for dir in dirs:
-                    dir_path = os.path.join(root, dir)
-                    if not os.listdir(dir_path):
-                        os.rmdir(dir_path)
-        except zipfile.BadZipFile as e:
-            logger.error('BadZipFile error while unzipping: %s' % str(e))
-            corrupted_dir = '/code/log'
-            if not os.path.exists(corrupted_dir):
-                os.makedirs(corrupted_dir)
-            # Log the path and date to logs.txt
-            with open(os.path.join(corrupted_dir, 'corruptedlogs.txt'), 'a') as log_file:
-                log_file.write('Corrupted file moved from: %s | Date: %s\n' % (file_path, datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')))
-            corrupted_path = os.path.join(corrupted_dir, os.path.basename(file_path))
-            os.rename(file_path, corrupted_path)
-        except FileNotFoundError as e:
-            logger.error('File not found during unzipping: %s' % str(e))
-        except OSError as e:
-            logger.error('Error while processing files during unzipping: %s' % str(e))
-        except RuntimeError as e:
-            logger.error('Error while processing files during unzipping: %s' % str(e))
-            logger.info('Skipping file due to RuntimeError: %s' % file_path)
+    logger.debug(f'Unzipping file: {file_path}')
+    try:
+        with zipfile.ZipFile(file_path, 'r') as zip_ref:
+            if password:
+                zip_ref.extractall(extract_to, pwd=password.encode())
+            else:
+                zip_ref.extractall(extract_to)
+        os.remove(file_path)
+        
+        for root, dirs, files in os.walk(extract_to):
+            for file in files:
+                nested_file_path = Path(root) / file
+                if file.endswith('.zip'):
+                    password = extract_password_from_filename(file)
+                    unzip_file(nested_file_path, extract_to, password)
+                else:
+                    if Path(root) != extract_to:
+                        new_path = extract_to / file
+                        if not new_path.exists():
+                            shutil.move(str(nested_file_path), str(new_path))
+                        else:
+                            logger.warning(f'File {file} already exists in {extract_to}. Skipping.')
+                            nested_file_path.unlink()
+
+        for root, dirs, files in os.walk(extract_to, topdown=False):
+            for dir in dirs:
+                dir_path = Path(root) / dir
+                if not any(dir_path.iterdir()):
+                    dir_path.rmdir()
+
+    except zipfile.BadZipFile as e:
+        logger.error(f'BadZipFile error while unzipping: {str(e)}')
+        corrupted_dir = Path('/code/log')
+        if not corrupted_dir.exists():
+            corrupted_dir.mkdir(parents=True, exist_ok=True)
+        with open(corrupted_dir / 'corruptedlogs.txt', 'a') as log_file:
+            log_file.write(f'Corrupted file moved from: {file_path} | Date: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")}\n')
+        corrupted_path = corrupted_dir / file_path.name
+        shutil.move(str(file_path), str(corrupted_path))
+
+    except FileNotFoundError as e:
+        logger.error(f'File not found during unzipping: {str(e)}')
+
+    except OSError as e:
+        logger.error(f'Error while processing files during unzipping: {str(e)}')
+
+    except RuntimeError as e:
+        logger.error(f'Error while processing files during unzipping: {str(e)}')
+        logger.info(f'Skipping file due to RuntimeError: {file_path}')
         
 
 
