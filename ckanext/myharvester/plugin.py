@@ -168,7 +168,8 @@ class MyharvesterPlugin(HarvesterBase):
                 if os.path.isfile(file_path):
                     ckan_resources.append({
                         'name': os.path.basename(file_path),
-                        'url': f'https://procurdatstorage.file.core.windows.net/procurdat/public/{publisher_name}/{tender_id}/{os.path.basename(file_path)}/?sv=2022-11-02&ss=f&srt=o&sp=r&se=2100-08-14T03:45:24Z&st=2024-08-13T19:45:24Z&spr=https&sig=Ozmr5xEsjYVj%2BvrDO6qXmrBGuLjjeJpIHM1yK28jxDc%3D'
+                        'url': f'https://procurdatstorage.file.core.windows.net/procurdat/public/{publisher_name}/{tender_id}/{os.path.basename(file_path)}?sv=2022-11-02&ss=f&srt=o&sp=r&se=2100-08-14T03:45:24Z&st=2024-08-13T19:45:24Z&spr=https&sig=Ozmr5xEsjYVj%2BvrDO6qXmrBGuLjjeJpIHM1yK28jxDc%3D',
+                        'format': os.path.basename(file_path).split('.')[-1].upper()
                     })
 
             package_dict = {
