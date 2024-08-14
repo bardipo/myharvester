@@ -58,11 +58,11 @@ def unzip_file(file_path, extract_to,password=None):
                         os.rmdir(dir_path)
         except zipfile.BadZipFile as e:
             logger.error('BadZipFile error while unzipping: %s' % str(e))
-            corrupted_dir = '/storage/public/corruptedfiles'
+            corrupted_dir = '/code/log'
             if not os.path.exists(corrupted_dir):
                 os.makedirs(corrupted_dir)
             # Log the path and date to logs.txt
-            with open(os.path.join(corrupted_dir, 'logs.txt'), 'a') as log_file:
+            with open(os.path.join(corrupted_dir, 'corruptedlogs.txt'), 'a') as log_file:
                 log_file.write('Corrupted file moved from: %s | Date: %s\n' % (file_path, datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')))
             corrupted_path = os.path.join(corrupted_dir, os.path.basename(file_path))
             os.rename(file_path, corrupted_path)

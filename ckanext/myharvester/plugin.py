@@ -185,8 +185,18 @@ class MyharvesterPlugin(HarvesterBase):
 
         except ValidationError as e:
             self._save_object_error('Invalid package with GUID %s: %r' % (harvest_object.guid, e.error_dict), harvest_object, 'Import')
+            logs_dir = '/code/log'
+            if not os.path.exists(logs_dir):
+                os.makedirs(logs_dir)
+            with open(os.path.join(logs_dir, 'importlogs.txt'), 'a') as log_file:
+                log_file.write(f'[{datetime.now(timezone.utc)}] | Invalid package with GUID %s: %r' % (harvest_object.guid, e.error_dict), harvest_object, 'Import')
         except Exception as e:
             self._save_object_error('%s' % e, harvest_object, 'Import')
+            logs_dir = '/code/log'
+            if not os.path.exists(logs_dir):
+                os.makedirs(logs_dir)
+            with open(os.path.join(logs_dir, 'importlogs.txt'), 'a') as log_file:
+                log_file.write(f'[{datetime.now(timezone.utc)}] | %s' % e, harvest_object, 'Import')
 
         return False
     
