@@ -24,6 +24,7 @@ def extract_password_from_filename(filename):
 
 def unzip_file(file_path, extract_to, password=None):
     logger.debug('Unzipping file: %s' % file_path)
+    logger.debug("Beginning of the unzip " + file_path + " extract to " + extract_to)
     try:
         with zipfile.ZipFile(file_path, 'r') as zip_ref:
             if password:
@@ -35,8 +36,11 @@ def unzip_file(file_path, extract_to, password=None):
         # Recursively unzip any nested zip files and move files to extract_to
         for root, dirs, files in os.walk(extract_to):
             for file in files:
+                logger.debug("File in files beginning " + file + " and root " + root)
                 file_path = os.path.join(root, file)
+                logger.debug("Filepath changed " + file_path)
                 file_path = os.path.normpath(file_path)  # Normalize the path
+                logger.debug("Normalised path  " + file_path)
 
                 if file.endswith('.zip'):
                     password = extract_password_from_filename(file)
