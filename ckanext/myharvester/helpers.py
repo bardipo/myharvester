@@ -26,13 +26,42 @@ def unzip_file(file_path, extract_to, password=None):
     logger.debug('Unzipping file: %s' % file_path)
     try:
         with zipfile.ZipFile(file_path, 'r') as zip_ref:
-            # Inspect paths and normalize them
-            for zip_info in zip_ref.infolist():
-                extracted_path = zip_ref.extract(zip_info, path=extract_to, pwd=password.encode() if password else None)
-                normalized_path = os.path.normpath(extracted_path)
-                if normalized_path != extracted_path:
-                    os.rename(extracted_path, normalized_path)
-                    
+            for member in zip_ref.infolist():
+                # Log the file being extracted
+                logger.info(f"Extracting: {member.filename}")
+                
+                # Normalize the extracted path to prevent path traversal attacks
+                normalized_path = os.path.normpath(os.path.join(extract_to, member.filename))
+                
+                # Prevent path traversal attacks by ensuring the extracted path is within the intended directory
+                if not normalized_path.startswith(os.path.abspath(extract_to)):
+                    logger.error("Attempted Path Traversal in Zip File")
+                    raise Exception("Attempted Path Traversal in Zip File")
+                
+                # Handle directories
+                if member.is_dir():
+                    os.makedirs(normalized_path, exist_ok=True)
+                    continue
+                
+                # Ensure the parent directory exists
+                os.makedirs(os.path.dirname(normalized_path), exist_ok=True)
+                
+                # Open and extract file
+                with zip_ref.open(member, pwd=password.encode() if password else None) as source_file:
+                    with open(normalized_path, "wb") as target_file:
+                        shutil.copyfileobj(source_file, target_file)
+                
+                # Log the file extraction completion
+                logger.info(f"Extracted: {normalized_path}")
+                
+                # Apply file permissions (if any)
+                perm = member.external_attr >> 16
+                if perm:
+                    os.chmod(normalized_path, perm)
+                    logger.info(f"Set permissions {oct(perm)} for: {normalized_path}")
+        
+        # Log the removal of the zip file
+        logger.info(f"Removing zip file: {file_path}")
         os.remove(file_path)
 
         # Continue with the rest of the file processing as before...
