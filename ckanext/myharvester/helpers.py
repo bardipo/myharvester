@@ -27,11 +27,14 @@ def unzip_file(file_path, extract_to, password=None):
     try:
         with zipfile.ZipFile(file_path, 'r') as zip_ref:
             for member in zip_ref.infolist():
-                # Log the file being extracted
                 logger.info(f"Extracting: {member.filename}")
+                linux_path = member.filename.replace('\\', '/')
+                logger.info(f"Extracting Linux Path: {linux_path}")
                 
-                # Normalize the extracted path to prevent path traversal attacks
-                normalized_path = os.path.join(extract_to, member.filename)
+                # Normalize the path to prevent path traversal and handle OS differences
+                normalized_path = os.path.normpath(os.path.join(extract_to, linux_path))
+
+                logger.info(f"Normalized: {normalized_path}")
                 
                 # Prevent path traversal attacks by ensuring the extracted path is within the intended directory
                 if not normalized_path.startswith(os.path.abspath(extract_to)):
