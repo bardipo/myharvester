@@ -31,7 +31,7 @@ def unzip_file(file_path, extract_to, password=None):
                 logger.info(f"Extracting: {member.filename}")
                 
                 # Normalize the extracted path to prevent path traversal attacks
-                normalized_path = os.path.normpath(os.path.join(extract_to, member.filename))
+                normalized_path = os.path.join(extract_to, member.filename)
                 
                 # Prevent path traversal attacks by ensuring the extracted path is within the intended directory
                 if not normalized_path.startswith(os.path.abspath(extract_to)):
