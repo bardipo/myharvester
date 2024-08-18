@@ -23,27 +23,41 @@ def extract_password_from_filename(filename):
     return None
 
 def unzip_file(file_path, extract_to, password=None):
-    logger.debug('Unzipping file: %s' % file_path)
     try:
         with zipfile.ZipFile(file_path, 'r') as zip_ref:
             for member in zip_ref.infolist():
-                normalized_path = os.path.normpath(os.path.join(extract_to, member.filename.replace('\\', '/')))
+                linux_path = member.filename.replace('\\', '/')
+                normalized_path = os.path.normpath(os.path.join(extract_to, linux_path))
 
                 if not normalized_path.startswith(os.path.abspath(extract_to)):
+                    logger.error("Attempted Path Traversal in Zip File")
                     raise Exception("Attempted Path Traversal in Zip File")
                 
-                zip_ref.extract(member, extract_to, pwd=password.encode() if password else None)
-        os.remove(file_path)
+                # Handle directories
+                if member.is_dir():
+                    os.makedirs(normalized_path, exist_ok=True)
+                    continue
+                
+                # Ensure the parent directory exists
+                os.makedirs(os.path.dirname(normalized_path), exist_ok=True)
+                
+                # Open and extract file
+                with zip_ref.open(member, pwd=password.encode() if password else None) as source_file:
+                    with open(normalized_path, "wb") as target_file:
+                        shutil.copyfileobj(source_file, target_file)
 
+        os.remove(file_path)
         for root, dirs, files in os.walk(extract_to):
             for file in files:
                 file_path = os.path.join(root, file)
+                file_path = os.path.normpath(file_path)
                 if file.endswith('.zip'):
                     password = extract_password_from_filename(file)
                     unzip_file(file_path, extract_to, password)
                 else:
+                    new_path = os.path.join(extract_to, file)
+                    new_path = os.path.normpath(new_path)
                     if root != extract_to:
-                        new_path = os.path.join(extract_to, file)
                         if not os.path.exists(new_path):
                             os.rename(file_path, new_path)
                         else:
@@ -52,14 +66,15 @@ def unzip_file(file_path, extract_to, password=None):
         for root, dirs, files in os.walk(extract_to, topdown=False):
             for dir in dirs:
                 dir_path = os.path.join(root, dir)
+                dir_path = os.path.normpath(dir_path)
                 if not os.listdir(dir_path):
                     os.rmdir(dir_path)
-        
     except zipfile.BadZipFile as e:
         logger.error('BadZipFile error while unzipping: %s' % str(e))
         corrupted_dir = '/code/log'
         if not os.path.exists(corrupted_dir):
             os.makedirs(corrupted_dir)
+        # Log the path and date to logs.txt
         with open(os.path.join(corrupted_dir, 'corruptedlogs.txt'), 'a') as log_file:
             log_file.write('Corrupted file moved from: %s | Date: %s\n' % (file_path, datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')))
         corrupted_path = os.path.join(corrupted_dir, os.path.basename(file_path))
@@ -71,7 +86,6 @@ def unzip_file(file_path, extract_to, password=None):
     except RuntimeError as e:
         logger.error('Error while processing files during unzipping: %s' % str(e))
         logger.info('Skipping file due to RuntimeError: %s' % file_path)
-        
 
 
 def ensure_directory_exists(path):
