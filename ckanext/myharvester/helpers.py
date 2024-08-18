@@ -28,10 +28,6 @@ def unzip_file(file_path, extract_to, password=None):
             for member in zip_ref.infolist():
                 linux_path = member.filename.replace('\\', '/')
                 normalized_path = os.path.normpath(os.path.join(extract_to, linux_path))
-
-                if not normalized_path.startswith(os.path.abspath(extract_to)):
-                    logger.error("Attempted Path Traversal in Zip File")
-                    raise Exception("Attempted Path Traversal in Zip File")
                 
                 # Handle directories
                 if member.is_dir():

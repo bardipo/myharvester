@@ -50,7 +50,7 @@ def download_tender_files_bieter(tender_id, download_dir):
             driver.quit()
     
 def gather_stage_bieter(harvest_job,justImport = False):
-        tender_ids = get_tender_ids_bieter_portal_db()
+        tender_ids = get_tender_ids_bieter_portal_db()[492:]
         if justImport:
             return process_multiple_tenders_without_download(tender_ids,harvest_job,"bieter_portal")
         else: 
