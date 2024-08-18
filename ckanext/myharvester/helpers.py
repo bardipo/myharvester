@@ -27,85 +27,39 @@ def unzip_file(file_path, extract_to, password=None):
     try:
         with zipfile.ZipFile(file_path, 'r') as zip_ref:
             for member in zip_ref.infolist():
-                logger.info(f"Extracting: {member.filename}")
-                linux_path = member.filename.replace('\\', '/')
-                logger.info(f"Extracting Linux Path: {linux_path}")
-                
-                # Normalize the path to prevent path traversal and handle OS differences
-                normalized_path = os.path.normpath(os.path.join(extract_to, linux_path))
+                normalized_path = os.path.normpath(os.path.join(extract_to, member.filename.replace('\\', '/')))
 
-                logger.info(f"Normalized: {normalized_path}")
-                
-                # Prevent path traversal attacks by ensuring the extracted path is within the intended directory
                 if not normalized_path.startswith(os.path.abspath(extract_to)):
-                    logger.error("Attempted Path Traversal in Zip File")
                     raise Exception("Attempted Path Traversal in Zip File")
                 
-                # Handle directories
-                if member.is_dir():
-                    os.makedirs(normalized_path, exist_ok=True)
-                    continue
-                
-                # Ensure the parent directory exists
-                os.makedirs(os.path.dirname(normalized_path), exist_ok=True)
-                
-                # Open and extract file
-                with zip_ref.open(member, pwd=password.encode() if password else None) as source_file:
-                    with open(normalized_path, "wb") as target_file:
-                        shutil.copyfileobj(source_file, target_file)
-                
-                # Log the file extraction completion
-                logger.info(f"Extracted: {normalized_path}")
-                
-                # Apply file permissions (if any)
-                perm = member.external_attr >> 16
-                if perm:
-                    os.chmod(normalized_path, perm)
-                    logger.info(f"Set permissions {oct(perm)} for: {normalized_path}")
-        
-        # Log the removal of the zip file
-        logger.info(f"Removing zip file: {file_path}")
+                zip_ref.extract(member, extract_to, pwd=password.encode() if password else None)
         os.remove(file_path)
 
-        # Continue with the rest of the file processing as before...
         for root, dirs, files in os.walk(extract_to):
             for file in files:
-                logger.debug("File in files beginning " + file + " and root " + root)
                 file_path = os.path.join(root, file)
-                logger.debug("Filepath changed " + file_path)
-                file_path = os.path.normpath(file_path)  # Normalize the path
-                logger.debug("Normalised path  " + file_path)
-
                 if file.endswith('.zip'):
                     password = extract_password_from_filename(file)
                     unzip_file(file_path, extract_to, password)
                 else:
-                    # Move file to extract_to directory if it's not already there
-                    new_path = os.path.join(extract_to, file)
-                    new_path = os.path.normpath(new_path)  # Normalize the path
-
                     if root != extract_to:
+                        new_path = os.path.join(extract_to, file)
                         if not os.path.exists(new_path):
                             os.rename(file_path, new_path)
                         else:
-                            # If file already exists, handle conflict (e.g., rename or skip)
                             logger.warning('File %s already exists in %s. Skipping.' % (file, extract_to))
                             os.remove(file_path)
-
-        # Remove empty directories
         for root, dirs, files in os.walk(extract_to, topdown=False):
             for dir in dirs:
                 dir_path = os.path.join(root, dir)
-                dir_path = os.path.normpath(dir_path)  # Normalize the path
-
                 if not os.listdir(dir_path):
                     os.rmdir(dir_path)
+        
     except zipfile.BadZipFile as e:
         logger.error('BadZipFile error while unzipping: %s' % str(e))
         corrupted_dir = '/code/log'
         if not os.path.exists(corrupted_dir):
             os.makedirs(corrupted_dir)
-        # Log the path and date to logs.txt
         with open(os.path.join(corrupted_dir, 'corruptedlogs.txt'), 'a') as log_file:
             log_file.write('Corrupted file moved from: %s | Date: %s\n' % (file_path, datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')))
         corrupted_path = os.path.join(corrupted_dir, os.path.basename(file_path))
